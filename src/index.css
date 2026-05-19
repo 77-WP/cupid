@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root {
+  --brand-orange: #E8622A;
+  --brand-cream: #FAF3E8;
+  --brand-brown: #2C1A0E;
+  --brand-amber: #F5A623;
+  --brand-light: #FDF8F0;
+}
+
+body {
+  background-color: #FAF3E8;
+  font-family: 'Sarabun', sans-serif;
+}
