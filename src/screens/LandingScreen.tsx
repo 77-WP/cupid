@@ -64,65 +64,78 @@ export default function LandingScreen() {
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
 
-        {/* ── TOP ZONE ── */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '16px 0' }}>
-
-          {/* Top bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: '#E8622A', fontSize: 14, lineHeight: 1 }}>♥</span>
-              <span style={{
-                fontFamily: 'Sarabun, sans-serif',
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#E8622A',
-                letterSpacing: '1px',
-              }}>
-                BEST PART
-              </span>
-            </div>
+        {/* ── TOP BAR — pinned to top ── */}
+        <div style={{
+          flexShrink: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 16px 0',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: '#E8622A', fontSize: 14, lineHeight: 1 }}>♥</span>
             <span style={{
               fontFamily: 'Sarabun, sans-serif',
-              fontSize: 11,
-              color: 'rgba(44,26,14,0.35)',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#E8622A',
               letterSpacing: '1px',
             }}>
-              CUPID · V1
+              BEST PART
             </span>
           </div>
+          <span style={{
+            fontFamily: 'Sarabun, sans-serif',
+            fontSize: 11,
+            color: 'rgba(44,26,14,0.35)',
+            letterSpacing: '1px',
+          }}>
+            CUPID · V1
+          </span>
+        </div>
+
+        {/* ── CONTENT ZONE — vertically centered ── */}
+        <div style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 24,
+          padding: '0 16px',
+        }}>
 
           {/* Mascot (60px, wobble) */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, marginBottom: 12 }}>
-            <div className="landing-mascot">
+          <div className="landing-mascot">
+            <div style={{
+              width: 60,
+              height: 60,
+              borderRadius: '50%',
+              border: '2.5px solid #E8622A',
+              background: '#FAF3E8',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 4px 14px rgba(232,98,42,0.15)',
+            }}>
               <div style={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                border: '2.5px solid #E8622A',
-                background: '#FAF3E8',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 4px 14px rgba(232,98,42,0.15)',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: 6,
-                  left: 4,
-                  right: 4,
-                  height: 26,
-                  background: '#2C1A0E',
-                  borderRadius: '50% 50% 35% 35%',
-                  opacity: 0.88,
-                }} />
-                <div style={{ position: 'absolute', top: 10, left: 13, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
-                <div style={{ position: 'absolute', top: 15, left: 23, width: 4, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.5)' }} />
-                <div style={{ position: 'absolute', top: 9, left: 34, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
-              </div>
+                position: 'absolute',
+                top: 6,
+                left: 4,
+                right: 4,
+                height: 26,
+                background: '#2C1A0E',
+                borderRadius: '50% 50% 35% 35%',
+                opacity: 0.88,
+              }} />
+              <div style={{ position: 'absolute', top: 10, left: 13, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
+              <div style={{ position: 'absolute', top: 15, left: 23, width: 4, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.5)' }} />
+              <div style={{ position: 'absolute', top: 9, left: 34, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
             </div>
           </div>
 
           {/* Question */}
-          <div style={{ textAlign: 'center', marginBottom: 16, padding: '0 16px' }}>
+          <div style={{ textAlign: 'center', width: '100%' }}>
             <div style={{
               fontFamily: 'Sarabun, sans-serif',
               fontSize: 22,
@@ -142,7 +155,7 @@ export default function LandingScreen() {
           </div>
 
           {/* Mood tiles */}
-          <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
 
             {/* LOVE */}
             <div
@@ -225,7 +238,7 @@ export default function LandingScreen() {
           </div>
 
           {/* Progress dots */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8622A' }} />
             <div style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid rgba(232,98,42,0.4)', background: 'transparent' }} />
             <div style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid rgba(232,98,42,0.4)', background: 'transparent' }} />
@@ -233,10 +246,11 @@ export default function LandingScreen() {
 
         </div>
 
-        {/* ── BOTTOM STRIP ── */}
+        {/* ── BOTTOM STRIP — pinned to bottom ── */}
         <div style={{
           height: 64,
           flexShrink: 0,
+          marginTop: 'auto',
           background: 'rgba(232,98,42,0.06)',
           borderTop: '1px solid rgba(232,98,42,0.15)',
           display: 'flex',
