@@ -5,10 +5,78 @@
   --brand-cream: #FAF3E8;
   --brand-brown: #2C1A0E;
   --brand-amber: #F5A623;
-  --brand-light: #FDF8F0;
 }
+
+* { box-sizing: border-box; }
 
 body {
   background-color: #FAF3E8;
   font-family: 'Sarabun', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+button { -webkit-tap-highlight-color: transparent; }
+
+/* Mascot float */
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.mascot-float { animation: mascot-float 2.8s ease-in-out infinite; }
+
+/* Mascot jump */
+@keyframes jump-anim {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-18px) scale(1.04); }
+  60% { transform: translateY(-8px) scale(1.02); }
+}
+.jump-anim { animation: jump-anim 1.2s cubic-bezier(.2,.7,.3,1) infinite; }
+
+/* Mascot worry sway */
+@keyframes worry-anim {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+.worry-anim { animation: worry-anim 1.8s ease-in-out infinite; }
+
+/* Mascot bow */
+@keyframes bow-anim {
+  0%, 70%, 100% { transform: rotate(0deg) translateY(0); }
+  35% { transform: rotate(-8deg) translateY(4px); }
+}
+.bow-anim { animation: bow-anim 3s ease-in-out infinite; }
+
+/* Ripple rings for greeting */
+@keyframes ripple-ring {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+}
+.ripple-ring {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 200px; height: 200px;
+  border: 1.5px solid rgba(232, 98, 42, 0.25);
+  border-radius: 50%;
+  animation: ripple-ring 2.4s ease-out infinite;
+}
+
+/* Confetti pop */
+@keyframes confetti-pop {
+  0% { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg) scale(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Horizontal scroll (no scrollbar) */
+.hscroll { scrollbar-width: none; }
+.hscroll::-webkit-scrollbar { display: none; }
+
+/* Screen base */
+.screen {
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
 }

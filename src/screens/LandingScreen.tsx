@@ -1,306 +1,77 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { supabase } from '../lib/supabase'
+import { MascotBowl, FaceHappy, FaceNeutral, FaceAlert, HeartLogo } from '../components/Illustrations'
+import { StatusBar, StepDots, C } from '../components/SharedUI'
 
 export default function LandingScreen() {
   const navigate = useNavigate()
-  const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
-  const [activeTile, setActiveTile] = useState<string | null>(null)
+  const [hover, setHover] = useState<string | null>(null)
 
-  useEffect(() => {
-    supabase
-      .from('cupid_feedback')
-      .select('*', { count: 'exact', head: true })
-      .then(({ count, error }) => {
-        if (!error && count !== null) {
-          setFeedbackCount(count)
-        } else {
-          setFeedbackCount(0)
-        }
-      })
-  }, [])
-
-  const handleTileTap = (tile: string, path: string) => {
-    setActiveTile(tile)
-    setTimeout(() => navigate(path), 200)
-  }
+  const tiles = [
+    { key: 'happy', face: <FaceHappy size={60} />, label: 'ชอบมาก', sub: 'บอกต่อ', path: '/happy' },
+    { key: 'okay', face: <FaceNeutral size={60} />, label: 'โอเค', sub: 'แสดงความคิด', path: '/neutral' },
+    { key: 'bad', face: <FaceAlert size={60} />, label: 'มีปัญหา', sub: 'แจ้งด่วน', path: '/problem' },
+  ]
 
   return (
     <MobileFrame>
-      <style>{`
-        @keyframes landingWobble {
-          0%, 100% { transform: rotate(-2deg); }
-          50% { transform: rotate(2deg); }
-        }
-        @keyframes heartPulse {
-          0%, 100% { transform: scale(1.0); }
-          50% { transform: scale(1.15); }
-        }
-        @keyframes sunSpin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes boltFlicker {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @keyframes heartBeat {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.2); }
-        }
-        .landing-mascot { animation: landingWobble 3s ease-in-out infinite; }
-        .heart-pulse { animation: heartPulse 2s ease-in-out infinite; display: inline-block; }
-        .sun-spin { animation: sunSpin 12s linear infinite; display: inline-block; }
-        .bolt-flicker { animation: boltFlicker 1.5s ease-in-out infinite; display: inline-block; }
-        .bottom-heart { animation: heartBeat 2s ease-in-out infinite; display: inline-block; }
-        .mood-tile {
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .mood-tile:active {
-          transform: scale(0.97) !important;
-        }
-      `}</style>
-
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
-
-        {/* ── TOP BAR — pinned to top ── */}
-        <div style={{
-          flexShrink: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 16px 0',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: '#E8622A', fontSize: 14, lineHeight: 1 }}>♥</span>
-            <span style={{
-              fontFamily: 'Sarabun, sans-serif',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#E8622A',
-              letterSpacing: '1px',
-            }}>
-              BEST PART
-            </span>
+      <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <StatusBar />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 22px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HeartLogo size={18} />
+            <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 13, letterSpacing: 2.4, color: C.brown }}>BEST PART</span>
           </div>
-          <span style={{
-            fontFamily: 'Sarabun, sans-serif',
-            fontSize: 11,
-            color: 'rgba(44,26,14,0.35)',
-            letterSpacing: '1px',
-          }}>
-            CUPID · V1
-          </span>
+          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, letterSpacing: 0.6, textTransform: 'uppercase' }}>cupid</div>
         </div>
-
-        {/* ── CONTENT ZONE — vertically centered ── */}
-        <div style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 24,
-          padding: '0 16px',
-        }}>
-
-          {/* Mascot (60px, wobble) */}
-          <div className="landing-mascot">
-            <div style={{
-              width: 60,
-              height: 60,
-              borderRadius: '50%',
-              border: '2.5px solid #E8622A',
-              background: '#FAF3E8',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 4px 14px rgba(232,98,42,0.15)',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: 6,
-                left: 4,
-                right: 4,
-                height: 26,
-                background: '#2C1A0E',
-                borderRadius: '50% 50% 35% 35%',
-                opacity: 0.88,
-              }} />
-              <div style={{ position: 'absolute', top: 10, left: 13, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
-              <div style={{ position: 'absolute', top: 15, left: 23, width: 4, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.5)' }} />
-              <div style={{ position: 'absolute', top: 9, left: 34, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 10 }}>
+          <div className="mascot-float"><MascotBowl size={148} mood="happy" wave /></div>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 22, color: C.brown, marginTop: 6, textAlign: 'center', lineHeight: 1.25, padding: '0 28px' }}>
+            วันนี้เป็นยังไงบ้างครับ?
           </div>
-
-          {/* Question */}
-          <div style={{ textAlign: 'center', width: '100%' }}>
-            <div style={{
-              fontFamily: 'Sarabun, sans-serif',
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#2C1A0E',
-              marginBottom: 4,
-            }}>
-              วันนี้เป็นยังไงบ้างครับ?
-            </div>
-            <div style={{
-              fontFamily: 'Sarabun, sans-serif',
-              fontSize: 12,
-              color: 'rgba(232,98,42,0.65)',
-            }}>
-              ใช้เวลา 30 วินาที
-            </div>
-          </div>
-
-          {/* Mood tiles */}
-          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-
-            {/* LOVE */}
-            <div
-              className="mood-tile"
-              onClick={() => handleTileTap('love', '/happy')}
-              style={{
-                flex: 1,
-                background: 'rgba(232,98,42,0.10)',
-                border: '1.5px solid rgba(232,98,42,0.35)',
-                borderRadius: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '20px 12px',
-                cursor: 'pointer',
-                gap: 8,
-                transform: activeTile === 'love' ? 'scale(1.08)' : 'scale(1)',
-              }}
-            >
-              <div className="heart-pulse" style={{ fontSize: 32, lineHeight: 1 }}>❤️</div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>ชอบมาก</div>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>บอกต่อ</div>
-              </div>
-            </div>
-
-            {/* OK */}
-            <div
-              className="mood-tile"
-              onClick={() => handleTileTap('ok', '/neutral')}
-              style={{
-                flex: 1,
-                background: 'rgba(245,166,35,0.10)',
-                border: '1.5px solid rgba(245,166,35,0.35)',
-                borderRadius: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '20px 12px',
-                cursor: 'pointer',
-                gap: 8,
-                transform: activeTile === 'ok' ? 'scale(1.08)' : 'scale(1)',
-              }}
-            >
-              <div className="sun-spin" style={{ fontSize: 32, lineHeight: 1 }}>☀️</div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>โอเค</div>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>แสดงความคิด</div>
-              </div>
-            </div>
-
-            {/* PROBLEM */}
-            <div
-              className="mood-tile"
-              onClick={() => handleTileTap('problem', '/problem')}
-              style={{
-                flex: 1,
-                background: 'rgba(220,80,60,0.08)',
-                border: '1.5px solid rgba(220,80,60,0.3)',
-                borderRadius: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '20px 12px',
-                cursor: 'pointer',
-                gap: 8,
-                transform: activeTile === 'problem' ? 'scale(1.08)' : 'scale(1)',
-              }}
-            >
-              <div className="bolt-flicker" style={{ fontSize: 32, lineHeight: 1 }}>⚡</div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>มีปัญหา</div>
-                <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>แจ้งด่วน</div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Progress dots */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8622A' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid rgba(232,98,42,0.4)', background: 'transparent' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid rgba(232,98,42,0.4)', background: 'transparent' }} />
-          </div>
-
+          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 12, color: C.brownSoft, marginTop: 4, letterSpacing: 0.3 }}>ใช้เวลา 30 วินาที</div>
         </div>
-
-        {/* ── BOTTOM STRIP — pinned to bottom ── */}
-        <div style={{
-          height: 64,
-          flexShrink: 0,
-          marginTop: 'auto',
-          background: 'rgba(232,98,42,0.06)',
-          borderTop: '1px solid rgba(232,98,42,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 20px',
-          gap: 12,
-        }}>
-          {/* Avatar dot stack */}
-          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: '#E8622A',
-              border: '2px solid white',
-              position: 'relative', zIndex: 3,
-            }} />
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: '#F5A623',
-              border: '2px solid white',
-              marginLeft: -8, position: 'relative', zIndex: 2,
-            }} />
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: '#FAF3E8',
-              border: '2px solid rgba(232,98,42,0.3)',
-              marginLeft: -8, position: 'relative', zIndex: 1,
-            }} />
+        <div style={{ display: 'flex', gap: 10, padding: '18px 18px 0' }}>
+          {tiles.map((t) => (
+            <button key={t.key}
+              onMouseEnter={() => setHover(t.key)} onMouseLeave={() => setHover(null)}
+              onClick={() => navigate(t.path)}
+              style={{
+                flex: 1, padding: '16px 8px 14px', borderRadius: 20, background: '#fff',
+                border: `1.5px solid ${hover === t.key ? C.orange : 'rgba(44,26,14,0.08)'}`,
+                boxShadow: hover === t.key ? '0 8px 24px rgba(232,98,42,0.18)' : '0 2px 8px rgba(44,26,14,0.05)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                cursor: 'pointer', transition: 'all .2s ease', fontFamily: 'inherit',
+                transform: hover === t.key ? 'translateY(-3px)' : 'translateY(0)',
+              }}>
+              {t.face}
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: C.brown }}>{t.label}</div>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft }}>{t.sub}</div>
+            </button>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', paddingTop: 14 }}>
+          <button onClick={() => navigate('/founder')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            วิสัยทัศน์ของเรา <span style={{ color: C.orange }}>→</span>
+          </button>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ padding: '0 20px 12px' }}><StepDots step={1} /></div>
+        <div style={{ margin: '0 16px 22px', padding: '18px 18px', borderRadius: 22, background: `linear-gradient(135deg, ${C.creamDeep}, #F8E2D2)`, display: 'flex', alignItems: 'center', gap: 14, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: -10, top: -10, opacity: 0.4 }}><HeartLogo size={48} color={C.orange} /></div>
+          <div style={{ display: 'flex' }}>
+            {[C.orange, C.amber, '#D9482A', C.brownSoft].map((c, i) => (
+              <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: `2.5px solid ${C.cream}`, marginLeft: i === 0 ? 0 : -10, zIndex: 4 - i, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 11 }}>
+                {['ปอ', 'นุ้ย', 'โต', '+'][i]}
+              </div>
+            ))}
           </div>
-
-          {/* Count text */}
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontFamily: 'Sarabun, sans-serif',
-              fontSize: 13,
-              color: '#2C1A0E',
-              lineHeight: 1.4,
-            }}>
-              {feedbackCount === null
-                ? '...'
-                : `${feedbackCount} คนให้กำลังใจทีมงานเราเดือนนี้ ❤️`
-              }
-            </div>
-          </div>
-
-          {/* Heart pulse icon */}
-          <div className="bottom-heart" style={{ color: '#E8622A', fontSize: 18, flexShrink: 0 }}>
-            ♥
+          <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
+            <div style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 22, color: C.brown, lineHeight: 1 }}>342</div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</div>
           </div>
         </div>
-
       </div>
     </MobileFrame>
   )

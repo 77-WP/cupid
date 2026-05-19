@@ -1,161 +1,135 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
+import { MascotWai, HeartLogo } from '../components/Illustrations'
+import { StatusBar, C } from '../components/SharedUI'
 
-const FULL_TEXT = 'สวัสดีครับ 🙏'
+function Typewriter({ text, speed = 80 }: { text: string; speed?: number }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (n >= text.length) return
+    const t = setTimeout(() => setN(n + 1), speed)
+    return () => clearTimeout(t)
+  }, [n, text, speed])
+  return <span>{text.slice(0, n)}<span style={{ opacity: n < text.length ? 1 : 0 }}>|</span></span>
+}
 
 export default function GreetingScreen() {
   const navigate = useNavigate()
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [displayText, setDisplayText] = useState('')
-  const [showSub, setShowSub] = useState(false)
+  const [phase, setPhase] = useState(0)
 
-  const goToLanding = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-    navigate('/landing')
-  }
+  const skip = () => navigate('/landing')
 
   useEffect(() => {
-    const chars = [...FULL_TEXT]
-    let i = 0
-    let typeInterval: ReturnType<typeof setInterval> | null = null
-    let subTimer: ReturnType<typeof setTimeout> | null = null
-
-    const typeDelay = setTimeout(() => {
-      typeInterval = setInterval(() => {
-        i++
-        setDisplayText(chars.slice(0, i).join(''))
-        if (i >= chars.length) {
-          clearInterval(typeInterval!)
-          typeInterval = null
-          subTimer = setTimeout(() => setShowSub(true), 200)
-        }
-      }, 80)
-    }, 300)
-
-    timerRef.current = setTimeout(() => navigate('/landing'), 2500)
-
-    return () => {
-      clearTimeout(typeDelay)
-      if (typeInterval) clearInterval(typeInterval)
-      if (subTimer) clearTimeout(subTimer)
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
+    const t1 = setTimeout(() => setPhase(1), 200)
+    const t2 = setTimeout(() => setPhase(2), 2200)
+    const t3 = setTimeout(() => setPhase(3), 3000)
+    const t4 = setTimeout(() => navigate('/landing'), 3500)
+    return () => [t1, t2, t3, t4].forEach(clearTimeout)
   }, [navigate])
 
   return (
     <MobileFrame>
       <style>{`
-        @keyframes greetFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes steamPulse {
-          0%, 100% { opacity: 0.25; transform: translateY(0); }
-          50% { opacity: 0.7; transform: translateY(-3px); }
-        }
-        @keyframes fadeInSub {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .greet-mascot { animation: greetFloat 2s ease-in-out infinite; }
-        .steam-1 { animation: steamPulse 1.8s ease-in-out infinite; }
-        .steam-2 { animation: steamPulse 1.8s ease-in-out 0.3s infinite; }
-        .steam-3 { animation: steamPulse 1.8s ease-in-out 0.6s infinite; }
-        .sub-appear { animation: fadeInSub 0.5s ease-out forwards; }
+        @keyframes fade-out-screen { from { opacity: 1; } to { opacity: 0; } }
       `}</style>
-
       <div
-        onClick={goToLanding}
+        onClick={skip}
         style={{
           width: '100%',
           minHeight: '100dvh',
+          background: C.cream,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          position: 'relative',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          opacity: phase === 3 ? 0 : 1,
+          transition: 'opacity .5s ease',
+        }}
+      >
+        {/* Thai geometric pattern */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+          <div className="ripple-ring" style={{ animationDelay: '0s' }} />
+          <div className="ripple-ring" style={{ animationDelay: '0.8s' }} />
+          <div className="ripple-ring" style={{ animationDelay: '1.6s' }} />
+          <svg viewBox="0 0 390 844" width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.07 }}>
+            <defs>
+              <pattern id="thaipat" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M20 4 L36 20 L20 36 L4 20 z" fill="none" stroke={C.brown} strokeWidth="1" />
+                <circle cx="20" cy="20" r="2" fill={C.brown} />
+              </pattern>
+            </defs>
+            <rect width="390" height="844" fill="url(#thaipat)" />
+          </svg>
+        </div>
+
+        <StatusBar />
+
+        {/* Center content */}
+        <div style={{
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          cursor: 'pointer',
           position: 'relative',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 1L39 20L20 39L1 20Z' fill='none' stroke='rgba(232%2C98%2C42%2C0.07)' stroke-width='1'/%3E%3Ccircle cx='20' cy='20' r='1.5' fill='rgba(232%2C98%2C42%2C0.09)'/%3E%3Ccircle cx='0' cy='0' r='1' fill='rgba(232%2C98%2C42%2C0.07)'/%3E%3Ccircle cx='40' cy='0' r='1' fill='rgba(232%2C98%2C42%2C0.07)'/%3E%3Ccircle cx='0' cy='40' r='1' fill='rgba(232%2C98%2C42%2C0.07)'/%3E%3Ccircle cx='40' cy='40' r='1' fill='rgba(232%2C98%2C42%2C0.07)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-        }}
-      >
-        {/* Bowl mascot */}
-        <div className="greet-mascot" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
-          {/* Steam lines */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 20, marginBottom: 6 }}>
-            <div className="steam-1" style={{ width: 3, height: 10, background: 'rgba(232,98,42,0.35)', borderRadius: 99 }} />
-            <div className="steam-2" style={{ width: 3, height: 15, background: 'rgba(232,98,42,0.35)', borderRadius: 99 }} />
-            <div className="steam-3" style={{ width: 3, height: 10, background: 'rgba(232,98,42,0.35)', borderRadius: 99 }} />
-          </div>
-
-          {/* Bowl circle */}
+          zIndex: 1,
+        }}>
           <div style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            border: '3px solid #E8622A',
-            background: '#FAF3E8',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 6px 20px rgba(232,98,42,0.18)',
+            opacity: phase >= 1 ? 1 : 0,
+            transform: phase >= 1 ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.92)',
+            transition: 'all .7s cubic-bezier(.2,.7,.3,1)',
           }}>
-            {/* Rice mound */}
-            <div style={{
-              position: 'absolute',
-              top: 8,
-              left: 6,
-              right: 6,
-              height: 34,
-              background: '#2C1A0E',
-              borderRadius: '50% 50% 35% 35%',
-              opacity: 0.88,
-            }} />
-            {/* Rice grain highlights */}
-            <div style={{ position: 'absolute', top: 13, left: 18, width: 6, height: 4, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
-            <div style={{ position: 'absolute', top: 20, left: 30, width: 5, height: 3, borderRadius: 99, background: 'rgba(250,243,232,0.5)' }} />
-            <div style={{ position: 'absolute', top: 12, left: 44, width: 6, height: 4, borderRadius: 99, background: 'rgba(250,243,232,0.6)' }} />
+            <MascotWai size={200} glow />
+          </div>
+
+          <div style={{
+            marginTop: 16,
+            fontFamily: '"Sarabun", system-ui',
+            fontWeight: 700,
+            fontSize: 32,
+            color: C.brown,
+            height: 44,
+            lineHeight: 1,
+            textAlign: 'center',
+          }}>
+            {phase >= 1 && <Typewriter text="สวัสดีครับ 🙏" speed={90} />}
+          </div>
+
+          <div style={{
+            marginTop: 8,
+            fontFamily: '"DM Sans", system-ui',
+            fontSize: 11,
+            color: C.brownSoft,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            opacity: phase >= 2 ? 1 : 0,
+            transition: 'opacity .4s ease',
+          }}>
+            tap to skip
           </div>
         </div>
 
-        {/* Typewriter text */}
+        {/* Brand mark */}
         <div style={{
-          fontFamily: 'Sarabun, sans-serif',
-          fontSize: 28,
-          fontWeight: 700,
-          color: '#2C1A0E',
-          marginBottom: 14,
-          minHeight: 40,
-          textAlign: 'center',
+          paddingBottom: 56,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          opacity: 0.45,
+          position: 'relative',
+          zIndex: 1,
         }}>
-          {displayText}
-        </div>
-
-        {/* Sub text fades in after typewriter */}
-        {showSub && (
-          <div className="sub-appear" style={{
-            fontFamily: 'Sarabun, sans-serif',
-            fontSize: 14,
-            color: '#E8622A',
-            letterSpacing: '2px',
-          }}>
-            Best Part · Cupid
-          </div>
-        )}
-
-        {/* Bottom label */}
-        <div style={{
-          position: 'absolute',
-          bottom: 24,
-          fontFamily: 'Sarabun, sans-serif',
-          fontSize: 11,
-          color: 'rgba(44,26,14,0.3)',
-          letterSpacing: '1.5px',
-        }}>
-          BEST PART · CUPID
+          <HeartLogo size={16} />
+          <span style={{
+            fontFamily: '"DM Sans", system-ui',
+            fontWeight: 700,
+            fontSize: 11,
+            letterSpacing: 2.4,
+            color: C.brown,
+          }}>BEST PART · CUPID</span>
         </div>
       </div>
     </MobileFrame>
