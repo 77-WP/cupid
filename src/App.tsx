@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom'
 import GreetingScreen from './screens/GreetingScreen'
 import LandingScreen from './screens/LandingScreen'
 import HappyPath from './screens/HappyPath'
@@ -27,23 +27,12 @@ function SourceCapture() {
   return null
 }
 
-function GreetingWithRedirect() {
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const timer = setTimeout(() => navigate('/landing'), 2000)
-    return () => clearTimeout(timer)
-  }, [navigate])
-
-  return <GreetingScreen />
-}
-
 export default function App() {
   return (
     <BrowserRouter>
       <SourceCapture />
       <Routes>
-        <Route path="/" element={<GreetingWithRedirect />} />
+        <Route path="/" element={<GreetingScreen />} />
         <Route path="/landing" element={<LandingScreen />} />
         <Route path="/happy" element={<HappyPath />} />
         <Route path="/neutral" element={<NeutralPath />} />
