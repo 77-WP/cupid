@@ -64,8 +64,8 @@ export default function LandingScreen() {
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
 
-        {/* ── TOP 70% ── */}
-        <div style={{ flex: 7, display: 'flex', flexDirection: 'column', paddingBottom: 16, overflow: 'hidden' }}>
+        {/* ── TOP ZONE ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: 16 }}>
 
           {/* Top bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
@@ -142,7 +142,7 @@ export default function LandingScreen() {
           </div>
 
           {/* Mood tiles */}
-          <div style={{ display: 'flex', gap: 10, padding: '0 16px', flex: 1 }}>
+          <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
 
             {/* LOVE */}
             <div
@@ -157,13 +157,13 @@ export default function LandingScreen() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '14px 8px',
+                padding: '20px 12px',
                 cursor: 'pointer',
                 gap: 8,
                 transform: activeTile === 'love' ? 'scale(1.08)' : 'scale(1)',
               }}
             >
-              <div className="heart-pulse" style={{ fontSize: 24, lineHeight: 1 }}>❤️</div>
+              <div className="heart-pulse" style={{ fontSize: 32, lineHeight: 1 }}>❤️</div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>ชอบมาก</div>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>บอกต่อ</div>
@@ -183,13 +183,13 @@ export default function LandingScreen() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '14px 8px',
+                padding: '20px 12px',
                 cursor: 'pointer',
                 gap: 8,
                 transform: activeTile === 'ok' ? 'scale(1.08)' : 'scale(1)',
               }}
             >
-              <div className="sun-spin" style={{ fontSize: 24, lineHeight: 1 }}>☀️</div>
+              <div className="sun-spin" style={{ fontSize: 32, lineHeight: 1 }}>☀️</div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>โอเค</div>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>แสดงความคิด</div>
@@ -209,13 +209,13 @@ export default function LandingScreen() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '14px 8px',
+                padding: '20px 12px',
                 cursor: 'pointer',
                 gap: 8,
                 transform: activeTile === 'problem' ? 'scale(1.08)' : 'scale(1)',
               }}
             >
-              <div className="bolt-flicker" style={{ fontSize: 24, lineHeight: 1 }}>⚡</div>
+              <div className="bolt-flicker" style={{ fontSize: 32, lineHeight: 1 }}>⚡</div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 13, fontWeight: 700, color: '#2C1A0E' }}>มีปัญหา</div>
                 <div style={{ fontFamily: 'Sarabun, sans-serif', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>แจ้งด่วน</div>
@@ -233,9 +233,10 @@ export default function LandingScreen() {
 
         </div>
 
-        {/* ── BOTTOM 30% STRIP ── */}
+        {/* ── BOTTOM STRIP ── */}
         <div style={{
-          flex: 3,
+          height: 65,
+          flexShrink: 0,
           background: 'rgba(232,98,42,0.06)',
           borderTop: '1px solid rgba(232,98,42,0.15)',
           display: 'flex',
