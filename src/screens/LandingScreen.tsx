@@ -65,10 +65,10 @@ export default function LandingScreen() {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
 
         {/* ── TOP ZONE ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: 16 }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '16px 0' }}>
 
           {/* Top bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: '#E8622A', fontSize: 14, lineHeight: 1 }}>♥</span>
               <span style={{
@@ -235,7 +235,7 @@ export default function LandingScreen() {
 
         {/* ── BOTTOM STRIP ── */}
         <div style={{
-          height: 65,
+          height: 64,
           flexShrink: 0,
           background: 'rgba(232,98,42,0.06)',
           borderTop: '1px solid rgba(232,98,42,0.15)',
