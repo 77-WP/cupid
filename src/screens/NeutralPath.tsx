@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBowl, DishPhoto } from '../components/Illustrations'
 import { StatusBar, StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
+import { openFrameQuestions } from '../lib/openFrameQuestions'
 
 const NEUTRAL_CATS = [
   { id: 'taste',    icon: '🍜', label: 'รสชาติ',      sub: 'เข้ม/อ่อน/แตกต่าง' },
@@ -11,13 +12,6 @@ const NEUTRAL_CATS = [
   { id: 'package',  icon: '📋', label: 'บรรจุภัณฑ์',  sub: 'กล่อง/ถุง/ช้อน' },
   { id: 'other',    icon: '💭', label: 'อื่นๆ',       sub: 'ความคิดอะไรก็ได้' },
 ]
-const NEUTRAL_HINTS: Record<string, string[]> = {
-  taste:    ['รสชาติวันนี้เข้มไปหน่อย...', 'เผ็ดน้อยลงได้ไหมครับ...', 'อยากให้กลับมาเหมือนเดิม...'],
-  portion:  ['ปริมาณน้อยกว่าปกติ...', 'อยากได้ไซส์ใหญ่ขึ้นครับ...', 'พอดีมากๆ ครับ...'],
-  delivery: ['อยากให้ส่งเร็วขึ้น...', 'น้องส่งสุภาพมากครับ...', 'แอพแจ้งเวลาคลาดเคลื่อน...'],
-  package:  ['กล่องรั่วครับ...', 'ขอช้อนเพิ่มได้ไหม...', 'อยากให้กล่องเป็นมิตรกับ env.'],
-  other:    ['อยากได้เมนูใหม่...', 'อยากให้เปิดเช้ากว่านี้...', 'ขอบคุณทีมงานครับ...'],
-}
 const DISHES = [
   { id: 'krapao', name: 'กะเพราหมูสับ', kind: 0 },
   { id: 'krua',   name: 'คั่วพริกเกลือ', kind: 1 },
@@ -35,7 +29,7 @@ function NeutralCategory({ pickCat }: { pickCat: (id: string) => void }) {
           <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: C.brown, lineHeight: 1.25 }}>มีอะไรอยากบอกทีมงานไหมครับ?</div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 4 }}>เลือกหัวข้อที่ใกล้เคียงที่สุด</div>
         </div>
-        <div className="mascot-listen"><MascotBowl size={64} mood="happy" /></div>
+        <MascotBowl size={64} mood="happy" />
       </div>
       <div style={{ padding: '16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {NEUTRAL_CATS.map((c) => (
@@ -62,10 +56,8 @@ function NeutralCategory({ pickCat }: { pickCat: (id: string) => void }) {
 
 function NeutralText({ catId, text, setText, next, skip }: { catId: string; text: string; setText: (v: string) => void; next: () => void; skip: () => void }) {
   const cat = NEUTRAL_CATS.find((c) => c.id === catId) || NEUTRAL_CATS[0]
-  const hints = NEUTRAL_HINTS[catId] || NEUTRAL_HINTS.other
-  const hint = useCycle(hints, 2400)
+  const hint = useCycle(openFrameQuestions.neutral, 3000)
   const tagList = ['รสชาติ', 'ปริมาณ', 'บรรจุภัณฑ์', 'อื่นๆ']
-  const [active, setActive] = useState<string | null>(null)
   const toMenu = catId === 'taste' || catId === 'portion'
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -81,13 +73,10 @@ function NeutralText({ catId, text, setText, next, skip }: { catId: string; text
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={hint}
           style={{ width: '100%', minHeight: 140, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.5 }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {tagList.map((t) => {
-            const on = active === t
-            return (
-              <button key={t} onClick={() => { setActive(t); setText(text ? `${text}\n#${t} ` : `#${t} `) }}
-                style={{ padding: '6px 12px', borderRadius: 999, background: on ? C.orange : 'transparent', border: `1.5px solid ${C.orange}`, color: on ? '#fff' : C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
-            )
-          })}
+          {tagList.map((t) => (
+            <button key={t} onClick={() => setText(text ? `${text}\n#${t} ` : `#${t} `)}
+              style={{ padding: '6px 12px', borderRadius: 999, background: 'transparent', border: `1.5px solid ${C.orange}`, color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
+          ))}
         </div>
       </div>
       <div style={{ flex: 1 }} />
@@ -97,8 +86,8 @@ function NeutralText({ catId, text, setText, next, skip }: { catId: string; text
           {toMenu ? 'ถัดไป' : 'ส่งให้ทีมงาน'}
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
         </button>
-        <div style={{ textAlign: 'center', marginTop: 6, paddingBottom: 12 }}>
-          <button onClick={skip} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามครับ →</button>
+        <div style={{ textAlign: 'right', marginTop: 8, paddingBottom: 12 }}>
+          <button onClick={skip} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามได้ครับ →</button>
         </div>
       </div>
     </div>
@@ -137,8 +126,8 @@ function NeutralMenu({ catId, done, skip }: { catId: string; done: () => void; s
           ส่งให้ทีมงาน
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
         </button>
-        <div style={{ textAlign: 'center', marginTop: 6, paddingBottom: 12 }}>
-          <button onClick={skip} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามครับ →</button>
+        <div style={{ textAlign: 'right', marginTop: 8, paddingBottom: 12 }}>
+          <button onClick={skip} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามได้ครับ →</button>
         </div>
       </div>
     </div>

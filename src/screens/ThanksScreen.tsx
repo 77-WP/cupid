@@ -91,6 +91,18 @@ export default function ThanksScreen() {
           <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, lineHeight: 1.5 }}>ทีมงานจะอ่านข้อความนี้คืนนี้เองครับ 🙏</div>
         </div>
 
+        {/* Personal signature */}
+        <div style={{ padding: '16px 24px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 22, background: C.orangeSoft, border: `2px solid ${C.orange}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👨‍🍳</div>
+            <div style={{ width: 44, height: 44, borderRadius: 22, background: '#F2E7D2', border: `2px solid ${C.orange}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👩‍🍳</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: '"Caveat", cursive', fontWeight: 600, fontSize: 20, color: C.brown, lineHeight: 1.2 }}>ขอบคุณจากใจจริงครับ 🙏</div>
+            <div style={{ fontFamily: '"Caveat", cursive', fontSize: 16, color: C.brownSoft, marginTop: 2 }}>— บอย & นุ้ย, Best Part</div>
+          </div>
+        </div>
+
         {/* Small social cards */}
         <div style={{ padding: '8px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <button style={{ padding: '12px 12px', borderRadius: 14, background: '#fff', border: '1px solid rgba(44,26,14,0.08)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}>

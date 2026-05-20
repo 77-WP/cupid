@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotWorried, DishPhoto, BossAvatar } from '../components/Illustrations'
-import { StatusBar, StepDots, BackBtn, C } from '../components/SharedUI'
+import { DishPhoto, BossAvatar } from '../components/Illustrations'
+import { StatusBar, StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
+import { openFrameQuestions } from '../lib/openFrameQuestions'
 
 const PROBLEM_CATS = [
   { id: 'wrong',   icon: '📋', label: 'Order ผิด' },
@@ -21,26 +22,14 @@ const DISHES = [
   { id: 'pad',    name: 'ผัดซีอิ๊ว',    kind: 5 },
 ]
 
-function ProblemIntercept({ next }: { next: () => void }) {
+// Compact warm banner at top of categories — replaces old full-screen intercept
+function ProblemBanner() {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 16px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 8px' }}>
-        <div className="worry-anim"><MascotWorried size={140} /></div>
-        <div style={{ marginTop: 16, padding: '20px 22px', borderRadius: 24, width: '100%', boxSizing: 'border-box', background: 'linear-gradient(135deg, #FFF1E2, #FAE0CB)', border: '1.5px solid rgba(232,98,42,0.25)' }}>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: C.brown, textAlign: 'center', lineHeight: 1.3 }}>โอ้โห เกิดอะไรขึ้นเหรอครับ? 😟</div>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, marginTop: 12, lineHeight: 1.55, textAlign: 'center' }}>ก่อนจะรีวิวในแอพ ให้โอกาสเราแก้ไขก่อนได้เลยนะครับ</div>
-          <div style={{ margin: '14px 0', height: 1, background: 'rgba(44,26,14,0.12)' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' }}>
-            <div style={{ width: 32, height: 32, borderRadius: 16, background: C.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⚡</div>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, lineHeight: 1.4 }}>ทีมงานจะรับเรื่องและติดต่อกลับ<br/>ภายใน <b>2 ชั่วโมง</b> ครับ 🙏</div>
-          </div>
-        </div>
-      </div>
-      <div style={{ padding: '12px 0 22px' }}>
-        <button onClick={next} style={{ width: '100%', height: 56, borderRadius: 28, border: 'none', background: C.orange, color: '#fff', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 20px rgba(232,98,42,0.32)' }}>
-          บอกเราได้เลยครับ
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
-        </button>
+    <div style={{ margin: '8px 16px 0', padding: '12px 14px', borderRadius: 16, background: 'rgba(220,80,60,0.06)', border: '1px solid rgba(220,80,60,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ fontSize: 24, flexShrink: 0 }}>😟</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.3 }}>โอ้โห เกิดอะไรขึ้นเหรอครับ? 😟</div>
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, marginTop: 2, lineHeight: 1.4 }}>ให้โอกาสเราแก้ไขก่อนได้เลยนะครับ ทีมงานรับเรื่องภายใน 2 ชั่วโมง 🙏</div>
       </div>
     </div>
   )
@@ -49,11 +38,12 @@ function ProblemIntercept({ next }: { next: () => void }) {
 function ProblemCategories({ onCat }: { onCat: (id: string) => void }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '8px 22px 0' }}>
+      <ProblemBanner />
+      <div style={{ padding: '12px 22px 0' }}>
         <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: C.brown }}>เกิดเรื่องอะไรขึ้นครับ?</div>
         <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>เลือกประเภทใกล้เคียงที่สุด</div>
       </div>
-      <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {PROBLEM_CATS.map((c) => (
           <button key={c.id} onClick={() => onCat(c.id)}
             style={{ padding: '18px 14px', borderRadius: 18, background: '#fff', border: '1.5px solid rgba(44,26,14,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', minHeight: 100, boxShadow: '0 2px 8px rgba(44,26,14,0.04)', transition: 'all .15s ease' }}
@@ -76,6 +66,7 @@ function ProblemDetail({ catId, done }: { catId: string; done: () => void }) {
   const toggle = (id: string) => setSel(sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id])
   const cat = PROBLEM_CATS.find((c) => c.id === catId)
   const ready = sel.length > 0 || note.length > 0
+  const hint = useCycle(openFrameQuestions.problem, 3000)
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '8px 22px 0' }}>
@@ -98,7 +89,7 @@ function ProblemDetail({ catId, done }: { catId: string; done: () => void }) {
         })}
       </div>
       <div style={{ padding: '4px 16px 0' }}>
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="บอกรายละเอียดได้เลยครับ — เป็นยังไง?"
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder={hint}
           style={{ width: '100%', minHeight: 70, padding: '12px 14px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.4 }} />
       </div>
       <div style={{ flex: 1 }} />
@@ -159,14 +150,15 @@ function ProblemContact({ done }: { done: () => void }) {
 
 export default function ProblemPath() {
   const navigate = useNavigate()
+  // steps: 0=categories(with banner), 1=detail, 2=contact
   const [step, setStep] = useState(0)
   const [catId, setCatId] = useState('')
   const back = () => {
     if (step === 0) return navigate('/landing')
-    if (step === 2 || step === 3) return setStep(1)
+    if (step === 1 || step === 2) return setStep(0)
     setStep((s) => s - 1)
   }
-  const pickCat = (id: string) => { setCatId(id); setStep(id === 'contact' ? 3 : 2) }
+  const pickCat = (id: string) => { setCatId(id); setStep(id === 'contact' ? 2 : 1) }
   return (
     <MobileFrame>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -176,10 +168,9 @@ export default function ProblemPath() {
           <div style={{ flex: 1 }}><StepDots step={2} /></div>
           <div style={{ width: 36 }} />
         </div>
-        {step === 0 && <ProblemIntercept next={() => setStep(1)} />}
-        {step === 1 && <ProblemCategories onCat={pickCat} />}
-        {step === 2 && <ProblemDetail catId={catId} done={() => navigate('/thanks')} />}
-        {step === 3 && <ProblemContact done={() => navigate('/landing')} />}
+        {step === 0 && <ProblemCategories onCat={pickCat} />}
+        {step === 1 && <ProblemDetail catId={catId} done={() => navigate('/thanks')} />}
+        {step === 2 && <ProblemContact done={() => navigate('/landing')} />}
       </div>
     </MobileFrame>
   )

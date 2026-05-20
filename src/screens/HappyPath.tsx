@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBowl, MascotJump, DishPhoto, ConfettiBurst } from '../components/Illustrations'
 import { StatusBar, StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
+import { openFrameQuestions } from '../lib/openFrameQuestions'
+import { supabase } from '../lib/supabase'
 
 const DISHES = [
   { id: 'krapao', name: 'กะเพราหมูสับ', cat: 'จานเดียว', kind: 0 },
@@ -14,9 +16,9 @@ const DISHES = [
 ]
 const CATS = ['ทั้งหมด', 'จานเดียว', 'ผัด', 'ของทอด', 'ต้ม/แกง']
 
-function OrangeCTA({ label, onClick }: { label: string; onClick: () => void }) {
+function OrangeCTA({ label, onClick, disabled = false }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
-    <button onClick={onClick} style={{ width: '100%', height: 56, borderRadius: 28, border: 'none', background: C.orange, color: '#fff', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 20px rgba(232,98,42,0.32), inset 0 -2px 0 rgba(0,0,0,0.12)' }}>
+    <button onClick={onClick} disabled={disabled} style={{ width: '100%', height: 56, borderRadius: 28, border: 'none', background: disabled ? 'rgba(232,98,42,0.3)' : C.orange, color: '#fff', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17, cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: disabled ? 'none' : '0 8px 20px rgba(232,98,42,0.32), inset 0 -2px 0 rgba(0,0,0,0.12)' }}>
       {label}
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
     </button>
@@ -24,8 +26,8 @@ function OrangeCTA({ label, onClick }: { label: string; onClick: () => void }) {
 }
 function SkipBtn({ onClick }: { onClick: () => void }) {
   return (
-    <div style={{ textAlign: 'center', marginTop: 6, paddingBottom: 12 }}>
-      <button onClick={onClick} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามครับ →</button>
+    <div style={{ textAlign: 'right', marginTop: 8, paddingBottom: 12 }}>
+      <button onClick={onClick} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>ข้ามได้ครับ →</button>
     </div>
   )
 }
@@ -82,33 +84,29 @@ function HappyMenu({ picks, setPicks, next, skip }: { picks: string[]; setPicks:
   )
 }
 
-function HappyVoice({ next, skip }: { next: () => void; skip: () => void }) {
+function HappyVoice({ picks: _picks, next, skip }: { picks: string[]; next: (text: string) => void; skip: () => void }) {
   const [text, setText] = useState('')
-  const hints = ['อร่อยมากครับ...', 'ปริมาณเยอะดี...', 'ส่งเร็วครับ...', 'รสชาติดี...']
-  const hint = useCycle(hints, 2400)
-  const tags = ['อร่อยมาก', 'คุ้มราคา', 'ส่งเร็ว', 'อยากเมนูใหม่']
-  const [active, setActive] = useState<string | null>(null)
+  const hint = useCycle(openFrameQuestions.happy, 3000)
+  const tags = ['บอกความรู้สึก', 'ขอเมนูใหม่', 'แนะนำอะไร', 'ชมทีมงาน']
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '8px 22px 0' }}>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: C.brown }}>อยากบอกอะไรเพิ่มไหมครับ?</div>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>เลือกหรือพิมพ์ตามใจเลยครับ</div>
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: C.brown }}>มีอะไรอยากบอกหรือขอเพิ่มไหมครับ?</div>
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>บอกได้เลยครับ ไม่ว่าจะเป็นอะไรก็ตาม 🙏</div>
       </div>
       <div style={{ padding: '14px 16px 0' }}>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={hint}
-          style={{ width: '100%', minHeight: 110, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.4 }} />
+          style={{ width: '100%', minHeight: 120, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.5 }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {tags.map((t) => {
-            const on = active === t
-            return (
-              <button key={t} onClick={() => { setActive(t); setText((s) => s ? s : `${t} `) }} style={{ padding: '6px 12px', borderRadius: 999, background: on ? C.orange : 'transparent', border: `1.5px solid ${C.orange}`, color: on ? '#fff' : C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
-            )
-          })}
+          {tags.map((t) => (
+            <button key={t} onClick={() => setText((s) => s ? s : t)}
+              style={{ padding: '6px 12px', borderRadius: 999, background: 'transparent', border: `1.5px solid ${C.orange}`, color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
+          ))}
         </div>
       </div>
       <div style={{ flex: 1 }} />
       <div style={{ padding: '0 16px 8px' }}>
-        <OrangeCTA label="ถัดไป" onClick={next} />
+        <OrangeCTA label="ส่งให้ทีมงาน →" onClick={() => next(text)} />
         <SkipBtn onClick={skip} />
       </div>
     </div>
@@ -136,9 +134,24 @@ function HappyShare({ done }: { done: () => void }) {
 
 export default function HappyPath() {
   const navigate = useNavigate()
+  // steps: 0=delight 1=menu 2=voice 3=share
   const [step, setStep] = useState(0)
   const [picks, setPicks] = useState<string[]>([])
+
   const back = () => step === 0 ? navigate('/landing') : setStep((s) => s - 1)
+
+  const handleVoiceSubmit = async (text: string) => {
+    if (text.trim() || picks.length > 0) {
+      await supabase.from('cupid_feedback').insert({
+        mood: 'happy',
+        menu_picks: picks,
+        free_text: text,
+        source: sessionStorage.getItem('cupid_source') || 'unknown',
+      })
+    }
+    setStep(3)
+  }
+
   return (
     <MobileFrame>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -153,7 +166,7 @@ export default function HappyPath() {
         </div>
         {step === 0 && <HappyDelight next={() => setStep(1)} />}
         {step === 1 && <HappyMenu picks={picks} setPicks={setPicks} next={() => setStep(2)} skip={() => setStep(2)} />}
-        {step === 2 && <HappyVoice next={() => setStep(3)} skip={() => setStep(3)} />}
+        {step === 2 && <HappyVoice picks={picks} next={handleVoiceSubmit} skip={() => setStep(3)} />}
         {step === 3 && <HappyShare done={() => navigate('/thanks')} />}
       </div>
     </MobileFrame>
