@@ -4,7 +4,7 @@ const NAV_ITEMS = [
   { path: '/report', icon: '📊', label: "Today's Pulse" },
   { path: '/report/feedback', icon: '📋', label: 'Feedback' },
   { path: '/report/settings', icon: '⚙️', label: 'Settings' },
-  { path: '/report/joe', icon: '💘', label: 'Joe Mode' },
+  { path: '/report/joe', icon: '💘', label: 'เหมือนฝัน' },
 ]
 
 const C = {
@@ -82,7 +82,7 @@ export default function ReportLayout() {
 
           <div style={{ flex: 1 }} />
           <div style={{ padding: '0 8px', fontSize: 11, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>
-            Cupid Report v1.0<br />Best Part © 2025
+            Cupid Report v1.0<br />Best Part © 2026
           </div>
         </aside>
 

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBow } from '../components/Illustrations'
 import { StatusBar, StepDots, C } from '../components/SharedUI'
+import { supabase } from '../lib/supabase'
 
 const VOTE_OPTIONS = [
   { id: 'A', label: 'ทองหล่อ', sub: 'ใกล้ BTS · พื้นที่ 60 ตร.ม.' },
@@ -11,14 +12,44 @@ const VOTE_OPTIONS = [
   { id: 'D', label: 'อ่อนนุช', sub: 'ใกล้ BTS · พื้นที่ 75 ตร.ม.' },
 ]
 
+interface MenuItem {
+  id: string
+  name: string
+  emoji?: string
+}
+
 export default function ThanksScreen() {
   const navigate = useNavigate()
   const [vote, setVote] = useState<string | null>(null)
-  const nickname = localStorage.getItem('cupid_nickname')
+  const [menus, setMenus] = useState<MenuItem[]>([])
+  const [selectedMenu, setSelectedMenu] = useState<string | null>(null)
+  const [menuVoteSaved, setMenuVoteSaved] = useState(false)
+
   const baseCounts: Record<string, number> = { A: 124, B: 98, C: 67, D: 53 }
   const counts = { ...baseCounts }
   if (vote) counts[vote]++
   const total = Object.values(counts).reduce((a, b) => a + b, 0)
+
+  useEffect(() => {
+    supabase.from('menus').select('id, name, emoji').limit(9).then(({ data, error }) => {
+      if (!error && data && data.length > 0) {
+        setMenus(data as MenuItem[])
+      }
+    })
+  }, [])
+
+  const handleMenuSelect = async (menuId: string) => {
+    if (menuVoteSaved) return
+    setSelectedMenu(menuId)
+    const lastId = sessionStorage.getItem('cupid_last_feedback_id')
+    if (lastId) {
+      await supabase
+        .from('cupid_feedback')
+        .update({ menu_ids: [menuId] })
+        .eq('id', lastId)
+    }
+    setMenuVoteSaved(true)
+  }
 
   return (
     <MobileFrame>
@@ -29,7 +60,7 @@ export default function ThanksScreen() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 28px 0' }}>
           <div className="bow-anim"><MascotBow size={160} /></div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: C.brown, marginTop: 8, textAlign: 'center', lineHeight: 1.25 }}>
-            {nickname ? <>ขอบคุณคุณ{nickname}มากเลยครับ <span style={{ color: C.orange }}>❤︎</span></> : <>ขอบคุณมากเลยครับ <span style={{ color: C.orange }}>❤︎</span></>}
+            ขอบคุณมากเลยครับ <span style={{ color: C.orange }}>❤︎</span>
           </div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brownSoft, marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
             คุณเป็นคนที่ <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>1,247</span> ที่ช่วยให้ Best Part ดีขึ้นครับ
@@ -43,9 +74,62 @@ export default function ThanksScreen() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, fontWeight: 600 }}>ส่งให้ทีมงานแล้ว</div>
-            <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, marginTop: 1 }}>#FB-1247 · 18 พ.ค. 21:42</div>
+            <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, marginTop: 1 }}>ทีมงานจะอ่านข้อความนี้คืนนี้เองครับ 🙏</div>
           </div>
         </div>
+
+        {/* Menu vote — only shows if menus exist */}
+        {menus.length > 0 && (
+          <div style={{ margin: '14px 16px 0', padding: '16px', borderRadius: 20, background: '#fff', border: '1px solid rgba(44,26,14,0.08)' }}>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: C.brown, marginBottom: 4 }}>
+              เมนูไหนที่คุณชอบมากที่สุดครับ?
+            </div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, marginBottom: 12 }}>
+              ไม่บังคับนะครับ
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {menus.map(menu => {
+                const selected = selectedMenu === menu.id
+                return (
+                  <button
+                    key={menu.id}
+                    onClick={() => handleMenuSelect(menu.id)}
+                    disabled={menuVoteSaved && !selected}
+                    style={{
+                      padding: '10px 6px', borderRadius: 14,
+                      border: `2px solid ${selected ? C.orange : 'rgba(44,26,14,0.08)'}`,
+                      background: selected ? '#FFF0E6' : '#fff',
+                      cursor: menuVoteSaved && !selected ? 'default' : 'pointer',
+                      fontFamily: 'inherit', opacity: menuVoteSaved && !selected ? 0.5 : 1,
+                      transition: 'all .18s ease', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 10, background: C.orangeSoft,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: menu.emoji ? 20 : 14, fontWeight: 700, color: C.orange,
+                      fontFamily: '"DM Sans", system-ui',
+                    }}>
+                      {menu.emoji || menu.name.charAt(0)}
+                    </div>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brown, fontWeight: 600, lineHeight: 1.2, textAlign: 'center' }}>
+                      {menu.name}
+                    </div>
+                    {selected && (
+                      <div style={{ fontSize: 10, color: C.orange }}>✓</div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {menuVoteSaved && (
+              <div style={{ marginTop: 10, fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.green, textAlign: 'center' }}>
+                ✅ บันทึกแล้วครับ ขอบคุณ!
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Vote / Announcement */}
         <div style={{ margin: '14px 16px 0', padding: 16, borderRadius: 22, background: 'linear-gradient(135deg, #FFF1E2, #FAE0CB)', border: '1.5px solid rgba(232,98,42,0.2)' }}>
@@ -87,10 +171,6 @@ export default function ThanksScreen() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginTop: 1 }}>30 วินาที · ข้ามได้ทุกเมื่อครับ</div>
           </div>
         </button>
-
-        <div style={{ padding: '12px 24px 6px', textAlign: 'center' }}>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, lineHeight: 1.5 }}>ทีมงานจะอ่านข้อความนี้คืนนี้เองครับ 🙏</div>
-        </div>
 
         {/* Personal signature */}
         <div style={{ padding: '16px 24px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>

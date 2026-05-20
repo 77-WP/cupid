@@ -143,7 +143,7 @@ export default function JoeMode() {
         <StatusBar />
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
           <BackBtn onClick={() => navigate('/qa')} />
-          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }}>JOE MODE</div>
+          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600 }}>เหมือนฝัน</div>
           <div style={{ width: 36 }} />
         </div>
         <div style={{ padding: '10px 22px 0' }}>

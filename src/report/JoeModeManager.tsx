@@ -497,7 +497,7 @@ export default function JoeModeManager() {
           background: C.card, borderRadius: 20, padding: '40px', textAlign: 'center',
           fontFamily: '"Sarabun", system-ui', color: C.brownSoft,
         }}>
-          ยังไม่มี Joe Mode entries ครับ<br />กด "+ เพิ่ม Entry ใหม่" เพื่อเริ่มได้เลย
+          ยังไม่มี entries ครับ<br />กด "+ เพิ่ม Entry ใหม่" เพื่อเริ่มได้เลย
         </div>
       )}
     </div>

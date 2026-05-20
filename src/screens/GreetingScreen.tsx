@@ -30,11 +30,7 @@ export default function GreetingScreen() {
   const navigate = useNavigate()
   const [phase, setPhase] = useState(0)
 
-  const nickname = localStorage.getItem('cupid_nickname')
-  console.log('[Cupid] cupid_nickname:', nickname)
-  const { main, sub } = nickname && nickname.length > 0
-    ? { main: `สวัสดีครับ คุณ${nickname} 👋`, sub: 'กลับมาอีกแล้วครับ ❤️' }
-    : getTimeGreeting()
+  const { main, sub } = getTimeGreeting()
 
   const skip = () => navigate('/landing')
 

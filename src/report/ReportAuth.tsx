@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 const AUTH_KEY = 'cupid_report_auth'
-const AUTH_VAL = 'bestpart2025'
+const AUTH_VAL = 'bestpart2026'
 
 const C = {
   bg: '#F5EDD8',
