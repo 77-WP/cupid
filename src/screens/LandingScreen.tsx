@@ -12,7 +12,7 @@ const TILE_TOASTS: Record<string, string> = {
 }
 
 interface JoeStrip {
-  emoji: string
+  icon: string
   title: string
 }
 
@@ -33,7 +33,7 @@ export default function LandingScreen() {
   useEffect(() => {
     supabase
       .from('cupid_joe_mode')
-      .select('emoji, title')
+      .select('icon, title')
       .eq('status', 'done')
       .limit(5)
       .then(({ data }) => {
@@ -124,26 +124,27 @@ export default function LandingScreen() {
           ))}
         </div>
 
-        {/* Joe Mode rotating strip */}
-        {(joeEntries.length > 0) && (
-          <div style={{ padding: '10px 22px 0', textAlign: 'center' }}>
-            <button onClick={() => navigate('/joe-mode')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ fontSize: 12 }}>{joeEntries[joeIdx]?.emoji}</span>
-              <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.5)', lineHeight: 1.4 }}>
-                {joeEntries[joeIdx]?.title} — เกิดจากคำขอของลูกค้าครับ →
-              </span>
-            </button>
-          </div>
-        )}
-
         {/* Vision link */}
-        <div style={{ textAlign: 'center', paddingTop: joeEntries.length > 0 ? 8 : 14 }}>
+        <div style={{ textAlign: 'center', paddingTop: 14 }}>
           <button onClick={() => navigate('/founder')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             วิสัยทัศน์ของเรา <span style={{ color: C.orange }}>→</span>
           </button>
         </div>
 
         <div style={{ flex: 1 }} />
+
+        {/* Joe Mode rotating strip — above step dots */}
+        {joeEntries.length > 0 && (
+          <div style={{ textAlign: 'center', paddingBottom: 6 }}>
+            <button onClick={() => navigate('/joe-mode')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 12 }}>{joeEntries[joeIdx]?.icon}</span>
+              <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.55)', lineHeight: 1.4 }}>
+                {joeEntries[joeIdx]?.title} — เกิดจากคำขอของลูกค้าครับ →
+              </span>
+            </button>
+          </div>
+        )}
+
         <div style={{ padding: '0 20px 12px' }}><StepDots step={1} /></div>
 
         {/* Social proof strip */}
