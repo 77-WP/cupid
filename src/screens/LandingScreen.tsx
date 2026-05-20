@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBowl, FaceHappy, FaceNeutral, FaceAlert, HeartLogo } from '../components/Illustrations'
 import { StatusBar, StepDots, C } from '../components/SharedUI'
+import SocialFooter from '../components/SocialFooter'
 import { supabase } from '../lib/supabase'
 
 const TILE_TOASTS: Record<string, string> = {
@@ -22,6 +23,7 @@ export default function LandingScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [joeEntries, setJoeEntries] = useState<JoeStrip[]>([])
   const [joeIdx, setJoeIdx] = useState(0)
+  const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
 
   const tiles = [
     { key: 'happy', face: <FaceHappy size={60} />, label: 'ชอบมาก', sub: 'บอกต่อ',       path: '/happy' },
@@ -39,6 +41,9 @@ export default function LandingScreen() {
       .then(({ data }) => {
         if (data && data.length > 0) setJoeEntries(data as JoeStrip[])
       })
+    supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
+      if (count != null) setFeedbackCount(count)
+    })
   }, [])
 
   // Rotate Joe strip every 5s
@@ -145,23 +150,9 @@ export default function LandingScreen() {
           </div>
         )}
 
-        <div style={{ padding: '0 20px 12px' }}><StepDots step={1} /></div>
+        <div style={{ padding: '0 20px 8px' }}><StepDots step={1} /></div>
 
-        {/* Social proof strip */}
-        <div style={{ margin: '0 16px 22px', padding: '18px 18px', borderRadius: 22, background: `linear-gradient(135deg, ${C.creamDeep}, #F8E2D2)`, display: 'flex', alignItems: 'center', gap: 14, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -10, top: -10, opacity: 0.4 }}><HeartLogo size={48} color={C.orange} /></div>
-          <div style={{ display: 'flex' }}>
-            {[C.orange, C.amber, '#D9482A', C.brownSoft].map((c, i) => (
-              <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: `2.5px solid ${C.cream}`, marginLeft: i === 0 ? 0 : -10, zIndex: 4 - i, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 11 }}>
-                {['ปอ', 'นุ้ย', 'โต', '+'][i]}
-              </div>
-            ))}
-          </div>
-          <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
-            <div style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 22, color: C.brown, lineHeight: 1 }}>342</div>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</div>
-          </div>
-        </div>
+        <SocialFooter feedbackCount={feedbackCount} />
       </div>
     </MobileFrame>
   )
