@@ -22,7 +22,7 @@ export default function NeutralPath() {
       category: 'open',
       source: sessionStorage.getItem('cupid_source') || 'unknown',
     }).select('id').single()
-    if (data?.id) sessionStorage.setItem('cupid_last_feedback_id', data.id)
+    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
     navigate('/thanks')
   }
 

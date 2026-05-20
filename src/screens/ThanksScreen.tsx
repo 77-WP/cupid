@@ -6,6 +6,8 @@ import { StatusBar, StepDots, C } from '../components/SharedUI'
 import SocialFooter from '../components/SocialFooter'
 import { supabase } from '../lib/supabase'
 
+// ── Types ──────────────────────────────────────────────────────────────────
+
 interface MenuItem {
   id: string
   name: string
@@ -17,61 +19,328 @@ interface JoeEntry {
   title: string
   icon: string
   summary: string
-  status: string
 }
 
 interface CupidSettings {
   announcement_is_active: boolean
   announcement_title: string | null
   announcement_text: string | null
+  announcement_mode: string | null
   announcement_vote_options: string[] | null
+  announcement_priority: string | null
+  qa_is_active: boolean
   weekly_question: string | null
+  weekly_question_options: string[] | null
+  qa_priority: string | null
 }
+
+// ── Section: Menu Vote ─────────────────────────────────────────────────────
+
+function MenuVote({ menus }: { menus: MenuItem[] }) {
+  const [selected, setSelected] = useState<string | null>(null)
+
+  const handleSelect = (menuId: string) => {
+    if (selected) return
+    setSelected(menuId)
+    sessionStorage.setItem('last_vote_menu', menuId)
+    const lastId = sessionStorage.getItem('last_feedback_id')
+    if (lastId) {
+      supabase.from('cupid_feedback').update({ menu_ids: [menuId] }).eq('id', lastId)
+    }
+  }
+
+  if (menus.length === 0) return null
+
+  return (
+    <div style={{
+      margin: '16px 16px 0', padding: '14px',
+      borderRadius: 18, background: 'rgba(232,98,42,0.06)',
+      border: '1px solid rgba(232,98,42,0.12)',
+    }}>
+      <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, marginBottom: 2 }}>
+        เมนูไหนที่คุณชอบมากที่สุดครับ?
+      </div>
+      <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 12 }}>
+        ไม่บังคับนะครับ
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        {menus.map(menu => {
+          const on = selected === menu.id
+          const voted = selected !== null
+          return (
+            <button key={menu.id} onClick={() => handleSelect(menu.id)} disabled={voted && !on}
+              style={{
+                padding: '10px 6px', borderRadius: 12,
+                border: `2px solid ${on ? C.orange : 'rgba(44,26,14,0.08)'}`,
+                background: on ? '#FFF0E6' : '#fff',
+                cursor: voted && !on ? 'default' : 'pointer',
+                opacity: voted && !on ? 0.45 : 1,
+                fontFamily: 'inherit', transition: 'all .18s ease',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              }}>
+              <div style={{
+                fontSize: 24, lineHeight: 1, width: 40, height: 40,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 10, background: on ? 'rgba(232,98,42,0.1)' : 'rgba(44,26,14,0.05)',
+              }}>
+                {menu.emoji || (
+                  <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 14, color: C.orange }}>
+                    {menu.name.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div style={{
+                fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 600,
+                color: C.brown, lineHeight: 1.3, textAlign: 'center',
+                overflow: 'hidden', display: '-webkit-box',
+                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              }}>
+                {menu.name}
+              </div>
+              {on && <div style={{ fontSize: 11, color: C.orange, fontWeight: 700 }}>✓</div>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Section: Announcement Card ─────────────────────────────────────────────
+
+function AnnouncementCard({ settings, size }: { settings: CupidSettings; size: 'primary' | 'secondary' }) {
+  const [vote, setVote] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(size === 'primary')
+  const opts = (settings.announcement_vote_options || []).filter(Boolean)
+
+  const isPrimary = size === 'primary'
+
+  return (
+    <div style={{
+      padding: isPrimary ? '14px 16px' : '10px 14px',
+      borderRadius: 18,
+      background: isPrimary ? 'linear-gradient(135deg, #FFF8F4, #FFF0E6)' : 'rgba(44,26,14,0.03)',
+      border: isPrimary ? '1.5px solid rgba(232,98,42,0.4)' : '1px solid rgba(44,26,14,0.1)',
+    }}>
+      <div style={{
+        fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
+        letterSpacing: 1.1, textTransform: 'uppercase',
+        color: isPrimary ? C.brownSoft : 'rgba(44,26,14,0.4)', marginBottom: isPrimary ? 6 : 4,
+      }}>
+        📣 มีเรื่องอยากบอก · จากทีมงาน
+      </div>
+
+      {/* Secondary: tap to expand */}
+      {!isPrimary ? (
+        <button onClick={() => setExpanded(e => !e)} style={{
+          background: 'transparent', border: 'none', padding: 0,
+          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: '100%',
+          textAlign: 'left',
+        }}>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.brown, flex: 1 }}>
+            {settings.announcement_title || 'ข้อความจากทีมงาน'}
+          </div>
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.brownSoft} strokeWidth="2.2" strokeLinecap="round">
+            <path d={expanded ? 'M2 10l5-5 5 5' : 'M2 5l5 5 5-5'} />
+          </svg>
+        </button>
+      ) : (
+        settings.announcement_title && (
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.35, marginBottom: 4 }}>
+            {settings.announcement_title}
+          </div>
+        )
+      )}
+
+      {(isPrimary || expanded) && (
+        <>
+          {settings.announcement_text && (
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, lineHeight: 1.6, marginTop: isPrimary ? 0 : 8 }}>
+              {settings.announcement_text}
+            </div>
+          )}
+          {opts.length > 0 && (
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {opts.map((opt, i) => {
+                const key = String.fromCharCode(65 + i)
+                const on = vote === key
+                return (
+                  <button key={key} onClick={() => !vote && setVote(key)} disabled={!!vote && !on}
+                    style={{
+                      padding: '9px 14px', borderRadius: 12, border: 'none',
+                      background: on ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.7)',
+                      boxShadow: on ? '0 0 0 1.5px #E8622A inset' : '0 1px 3px rgba(44,26,14,0.06)',
+                      fontFamily: 'inherit', textAlign: 'left',
+                      cursor: vote ? 'default' : 'pointer',
+                      opacity: !!vote && !on ? 0.6 : 1, transition: 'all .2s ease',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 11, flexShrink: 0,
+                      background: on ? C.orange : 'transparent',
+                      border: `1.5px solid ${on ? C.orange : 'rgba(44,26,14,0.2)'}`,
+                      color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 10,
+                    }}>
+                      {on ? '✓' : key}
+                    </div>
+                    <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, fontWeight: on ? 700 : 400 }}>
+                      {opt}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── Section: Inline Q&A ────────────────────────────────────────────────────
+
+function QACard({ settings, size }: { settings: CupidSettings; size: 'primary' | 'secondary' }) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+  const [expanded, setExpanded] = useState(size === 'primary')
+  const options = (settings.weekly_question_options || []).filter(Boolean)
+  const isPrimary = size === 'primary'
+
+  const handleAnswer = (ans: string) => {
+    if (selected) return
+    setSelected(ans)
+    setDone(true)
+    const lastId = sessionStorage.getItem('last_feedback_id')
+    if (lastId) {
+      supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
+    }
+  }
+
+  return (
+    <div style={{
+      padding: isPrimary ? '14px 16px' : '10px 14px',
+      borderRadius: 18,
+      background: isPrimary ? '#fff' : 'rgba(44,26,14,0.03)',
+      border: isPrimary ? '1.5px solid rgba(44,26,14,0.1)' : '1px solid rgba(44,26,14,0.08)',
+    }}>
+      <div style={{
+        fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
+        letterSpacing: 1, textTransform: 'uppercase',
+        color: isPrimary ? C.orange : 'rgba(44,26,14,0.35)', marginBottom: isPrimary ? 6 : 4,
+      }}>
+        📋 คำถามของสัปดาห์
+      </div>
+
+      {!isPrimary ? (
+        <button onClick={() => setExpanded(e => !e)} style={{
+          background: 'transparent', border: 'none', padding: 0,
+          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: '100%', textAlign: 'left',
+        }}>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.brown, flex: 1 }}>
+            {settings.weekly_question || 'คำถามสัปดาห์นี้'}
+          </div>
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.brownSoft} strokeWidth="2.2" strokeLinecap="round">
+            <path d={expanded ? 'M2 10l5-5 5 5' : 'M2 5l5 5 5-5'} />
+          </svg>
+        </button>
+      ) : (
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.35, marginBottom: 10 }}>
+          {settings.weekly_question}
+        </div>
+      )}
+
+      {(isPrimary || expanded) && (
+        <>
+          {done ? (
+            <div style={{
+              marginTop: 10, padding: '8px 14px', borderRadius: 10,
+              background: 'rgba(63,142,92,0.1)', border: '1px solid rgba(63,142,92,0.2)',
+              fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#3F8E5C', fontWeight: 600,
+            }}>
+              ✓ ขอบคุณครับ
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: isPrimary ? 0 : 10 }}>
+                {options.map(opt => {
+                  const on = selected === opt
+                  return (
+                    <button key={opt} onClick={() => handleAnswer(opt)}
+                      style={{
+                        padding: '8px 16px', borderRadius: 20,
+                        border: `1.5px solid ${on ? C.orange : C.orange}`,
+                        background: on ? C.orange : 'transparent',
+                        color: on ? '#fff' : C.orange,
+                        fontFamily: '"Sarabun", system-ui', fontSize: 13, fontWeight: 600,
+                        cursor: 'pointer', transition: 'all .15s ease',
+                      }}>
+                      {opt}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ textAlign: 'right', marginTop: 8 }}>
+                <button onClick={() => setDone(true)} style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.3)',
+                }}>
+                  ข้ามครับ
+                </button>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────
 
 export default function ThanksScreen() {
   const navigate = useNavigate()
 
   const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
   const [menus, setMenus] = useState<MenuItem[]>([])
-  const [selectedMenu, setSelectedMenu] = useState<string | null>(null)
   const [settings, setSettings] = useState<CupidSettings | null>(null)
-  const [annVote, setAnnVote] = useState<string | null>(null)
   const [joeEntry, setJoeEntry] = useState<JoeEntry | null>(null)
 
   useEffect(() => {
-    // Feedback count
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
       if (count != null) setFeedbackCount(count)
     })
 
-    // Menus — graceful fallback if table doesn't exist
     supabase.from('menus').select('id, name, emoji').order('display_order').limit(6).then(({ data, error }) => {
       if (!error && data && data.length > 0) setMenus(data as MenuItem[])
     })
 
-    // Settings
-    supabase.from('cupid_settings').select('announcement_is_active, announcement_title, announcement_text, announcement_vote_options, weekly_question').eq('id', 1).single().then(({ data }) => {
+    supabase.from('cupid_settings').select('*').eq('id', 1).single().then(({ data }) => {
       if (data) setSettings(data as CupidSettings)
     })
 
-    // Latest done Joe entry
-    supabase.from('cupid_joe_mode').select('id, title, icon, summary, status').eq('status', 'done').order('display_order', { ascending: false }).limit(1).single().then(({ data }) => {
-      if (data) setJoeEntry(data as JoeEntry)
-    })
+    supabase.from('cupid_joe_mode').select('id, title, icon, summary').eq('status', 'done')
+      .order('display_order', { ascending: false }).limit(1).single().then(({ data }) => {
+        if (data) setJoeEntry(data as JoeEntry)
+      })
   }, [])
 
-  const handleMenuSelect = (menuId: string) => {
-    if (selectedMenu) return
-    setSelectedMenu(menuId)
-    sessionStorage.setItem('last_vote_menu', menuId)
-    // Non-blocking DB save
-    const lastId = sessionStorage.getItem('cupid_last_feedback_id')
-    if (lastId) {
-      supabase.from('cupid_feedback').update({ menu_ids: [menuId] }).eq('id', lastId)
-    }
+  // Build ordered cards array
+  const cards: { type: 'announcement' | 'qa'; size: 'primary' | 'secondary' }[] = []
+  if (settings?.announcement_is_active) {
+    cards.push({ type: 'announcement', size: (settings.announcement_priority || 'primary') as 'primary' | 'secondary' })
   }
-
-  const annOptions = settings?.announcement_vote_options?.filter(Boolean) ?? []
+  if (settings?.qa_is_active) {
+    cards.push({ type: 'qa', size: (settings.qa_priority || 'secondary') as 'primary' | 'secondary' })
+  }
+  // Sort: primary first; if both claim primary, first one wins primary
+  cards.sort((a, b) => a.size === 'primary' && b.size !== 'primary' ? -1 : b.size === 'primary' && a.size !== 'primary' ? 1 : 0)
+  // If only 1 card, force it primary
+  if (cards.length === 1) cards[0].size = 'primary'
+  // If both claim primary, demote the second
+  if (cards.length === 2 && cards[0].size === 'primary' && cards[1].size === 'primary') {
+    cards[1].size = 'secondary'
+  }
 
   return (
     <MobileFrame>
@@ -79,7 +348,7 @@ export default function ThanksScreen() {
         <StatusBar />
         <div style={{ padding: '4px 18px 0' }}><StepDots step={3} /></div>
 
-        {/* ── Section 1: Hero ── */}
+        {/* ── Hero ── */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 28px 0' }}>
           <div className="bow-anim"><MascotBow size={150} /></div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: C.brown, marginTop: 8, textAlign: 'center', lineHeight: 1.25 }}>
@@ -92,8 +361,6 @@ export default function ThanksScreen() {
             </span>{' '}
             ที่ช่วยให้ Best Part ดีขึ้นครับ
           </div>
-
-          {/* Confirmation pill */}
           <div style={{
             marginTop: 12, padding: '7px 16px', borderRadius: 999,
             background: 'rgba(63,142,92,0.12)', border: '1px solid rgba(63,142,92,0.2)',
@@ -106,145 +373,21 @@ export default function ThanksScreen() {
           </div>
         </div>
 
-        {/* ── Section 2: Menu Vote ── */}
-        {menus.length > 0 && (
-          <div style={{
-            margin: '16px 16px 0', padding: '14px',
-            borderRadius: 18, background: 'rgba(232,98,42,0.06)',
-            border: '1px solid rgba(232,98,42,0.12)',
-          }}>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, marginBottom: 2 }}>
-              เมนูไหนที่คุณชอบมากที่สุดครับ?
-            </div>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 12 }}>
-              ไม่บังคับนะครับ
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {menus.map(menu => {
-                const selected = selectedMenu === menu.id
-                const voted = selectedMenu !== null
-                return (
-                  <button
-                    key={menu.id}
-                    onClick={() => handleMenuSelect(menu.id)}
-                    disabled={voted && !selected}
-                    style={{
-                      padding: '10px 6px', borderRadius: 12,
-                      border: `2px solid ${selected ? C.orange : 'rgba(44,26,14,0.08)'}`,
-                      background: selected ? '#FFF0E6' : '#fff',
-                      cursor: voted && !selected ? 'default' : 'pointer',
-                      opacity: voted && !selected ? 0.45 : 1,
-                      fontFamily: 'inherit', transition: 'all .18s ease',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    }}
-                  >
-                    <div style={{
-                      fontSize: 24, lineHeight: 1,
-                      width: 40, height: 40, display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', borderRadius: 10,
-                      background: selected ? 'rgba(232,98,42,0.1)' : 'rgba(44,26,14,0.05)',
-                    }}>
-                      {menu.emoji || (
-                        <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 14, color: C.orange }}>
-                          {menu.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{
-                      fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 600,
-                      color: C.brown, lineHeight: 1.3, textAlign: 'center',
-                      overflow: 'hidden', display: '-webkit-box',
-                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                    }}>
-                      {menu.name}
-                    </div>
-                    {selected && <div style={{ fontSize: 11, color: C.orange, fontWeight: 700 }}>✓</div>}
-                  </button>
-                )
-              })}
-            </div>
+        {/* ── Menu Vote ── */}
+        <MenuVote menus={menus} />
+
+        {/* ── Announcement + Q&A (ordered by priority) ── */}
+        {settings && cards.length > 0 && (
+          <div style={{ margin: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {cards.map(card => (
+              card.type === 'announcement'
+                ? <AnnouncementCard key="ann" settings={settings} size={card.size} />
+                : <QACard key="qa" settings={settings} size={card.size} />
+            ))}
           </div>
         )}
 
-        {/* ── Section 3: Announcement ── */}
-        {settings?.announcement_is_active && (
-          <div style={{
-            margin: '14px 16px 0', padding: '14px 16px', borderRadius: 18,
-            background: 'linear-gradient(135deg, #FFF8F4, #FFF0E6)',
-            border: '1.5px solid rgba(232,98,42,0.22)',
-          }}>
-            <div style={{
-              fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
-              letterSpacing: 1.1, textTransform: 'uppercase', color: C.brownSoft, marginBottom: 6,
-            }}>
-              📣 มีเรื่องอยากบอก · จากทีมงาน
-            </div>
-            {settings.announcement_title && (
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.35, marginBottom: 4 }}>
-                {settings.announcement_title}
-              </div>
-            )}
-            {settings.announcement_text && (
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, lineHeight: 1.6 }}>
-                {settings.announcement_text}
-              </div>
-            )}
-            {annOptions.length > 0 && (
-              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {annOptions.map((opt, i) => {
-                  const key = String.fromCharCode(65 + i)
-                  const on = annVote === key
-                  return (
-                    <button key={key} onClick={() => !annVote && setAnnVote(key)}
-                      disabled={!!annVote && !on}
-                      style={{
-                        padding: '9px 14px', borderRadius: 12, border: 'none',
-                        background: on ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.7)',
-                        boxShadow: on ? '0 0 0 1.5px #E8622A inset' : '0 1px 3px rgba(44,26,14,0.06)',
-                        fontFamily: 'inherit', textAlign: 'left', cursor: annVote ? 'default' : 'pointer',
-                        opacity: !!annVote && !on ? 0.6 : 1, transition: 'all .2s ease',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                      }}>
-                      <div style={{
-                        width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-                        background: on ? C.orange : 'transparent',
-                        border: `1.5px solid ${on ? C.orange : 'rgba(44,26,14,0.2)'}`,
-                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 10,
-                      }}>
-                        {on ? '✓' : key}
-                      </div>
-                      <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, fontWeight: on ? 700 : 400 }}>
-                        {opt}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Section 4: Q&A link ── */}
-        {settings?.weekly_question && (
-          <button onClick={() => navigate('/qa')} style={{
-            margin: '12px 16px 0', padding: '12px 16px', borderRadius: 16,
-            background: '#fff', border: '1px solid rgba(44,26,14,0.08)',
-            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-            display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 17, background: C.orangeSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
-            }}>📋</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown }}>ตอบคำถามของสัปดาห์ →</div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginTop: 1 }}>30 วินาที · ข้ามได้ทุกเมื่อครับ</div>
-            </div>
-          </button>
-        )}
-
-        {/* ── Section 5: เหมือนฝัน preview ── */}
+        {/* ── เหมือนฝัน preview ── */}
         {joeEntry && (
           <div style={{
             margin: '12px 16px 0', padding: '14px 16px', borderRadius: 18,
@@ -252,16 +395,14 @@ export default function ThanksScreen() {
           }}>
             <div style={{
               fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
-              letterSpacing: 1, textTransform: 'uppercase', color: C.orange,
-              marginBottom: 10, opacity: 0.8,
+              letterSpacing: 1, textTransform: 'uppercase', color: C.orange, marginBottom: 10, opacity: 0.8,
             }}>
               💘 เหมือนฝัน · สิ่งที่เราทำตามคำขอของคุณ
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{
                 width: 46, height: 46, borderRadius: 13, background: C.orangeSoft,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0,
               }}>
                 {joeEntry.icon}
               </div>
@@ -269,8 +410,7 @@ export default function ThanksScreen() {
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
                   borderRadius: 99, background: 'rgba(100,200,120,0.15)',
-                  fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 700, color: '#4caf78',
-                  marginBottom: 4,
+                  fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 700, color: '#4caf78', marginBottom: 4,
                 }}>
                   ✅ ทำแล้วครับ
                 </div>
@@ -284,15 +424,14 @@ export default function ThanksScreen() {
             </div>
             <button onClick={() => navigate('/joe-mode')} style={{
               marginTop: 10, background: 'transparent', border: 'none',
-              color: C.orange, fontFamily: '"Sarabun", system-ui',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0,
+              color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0,
             }}>
               ดูทั้งหมด →
             </button>
           </div>
         )}
 
-        {/* ── Section 6: Social Footer ── */}
+        {/* ── Social Footer ── */}
         <div style={{ marginTop: 16 }}>
           <SocialFooter feedbackCount={feedbackCount} />
         </div>

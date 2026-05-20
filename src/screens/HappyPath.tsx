@@ -164,7 +164,7 @@ export default function HappyPath() {
       free_text: text.trim() || null,
       source: sessionStorage.getItem('cupid_source') || 'unknown',
     }).select('id').single()
-    if (data?.id) sessionStorage.setItem('cupid_last_feedback_id', data.id)
+    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
     setStep(1)
   }
 

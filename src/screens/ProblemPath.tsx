@@ -4,6 +4,7 @@ import MobileFrame from '../components/MobileFrame'
 import { DishPhoto, BossAvatar } from '../components/Illustrations'
 import { StatusBar, StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
 import { openFrameQuestions } from '../lib/openFrameQuestions'
+import { supabase } from '../lib/supabase'
 
 const PROBLEM_CATS = [
   { id: 'wrong',   icon: '📋', label: 'Order ผิด' },
@@ -63,10 +64,24 @@ function ProblemCategories({ onCat }: { onCat: (id: string) => void }) {
 function ProblemDetail({ catId, done }: { catId: string; done: () => void }) {
   const [sel, setSel] = useState<string[]>([])
   const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const toggle = (id: string) => setSel(sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id])
   const cat = PROBLEM_CATS.find((c) => c.id === catId)
   const ready = sel.length > 0 || note.length > 0
   const hint = useCycle(openFrameQuestions.problem, 3000)
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    const { data } = await supabase.from('cupid_feedback').insert({
+      mood: 'problem',
+      category: catId,
+      menu_picks: sel,
+      free_text: note.trim() || null,
+      source: sessionStorage.getItem('cupid_source') || 'unknown',
+    }).select('id').single()
+    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
+    done()
+  }
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '8px 22px 0' }}>
@@ -98,7 +113,7 @@ function ProblemDetail({ catId, done }: { catId: string; done: () => void }) {
         <div style={{ flex: 1, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown }}>ทีมงานรับเรื่องภายใน 2 ชั่วโมง</div>
       </div>
       <div style={{ padding: '0 16px 22px' }}>
-        <button onClick={done} disabled={!ready}
+        <button onClick={handleSubmit} disabled={!ready || submitting}
           style={{ width: '100%', height: 56, borderRadius: 28, border: 'none', background: ready ? C.orange : 'rgba(232,98,42,0.3)', color: '#fff', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17, cursor: ready ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: ready ? '0 8px 20px rgba(232,98,42,0.32)' : 'none' }}>
           ส่งให้ทีมงาน
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
