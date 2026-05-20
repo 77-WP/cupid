@@ -9,6 +9,12 @@ import ThanksScreen from './screens/ThanksScreen'
 import QASession from './screens/QASession'
 import JoeMode from './screens/JoeMode'
 import FounderVision from './screens/FounderVision'
+import ReportAuth from './report/ReportAuth'
+import ReportLayout from './report/ReportLayout'
+import ReportDashboard from './report/ReportDashboard'
+import FeedbackFeed from './report/FeedbackFeed'
+import Settings from './report/Settings'
+import JoeModeManager from './report/JoeModeManager'
 import type { Source } from './types'
 
 const VALID_SOURCES: Source[] = ['grab', 'lineman', 'shopee', 'kiosk', 'unknown']
@@ -41,6 +47,14 @@ export default function App() {
         <Route path="/qa" element={<QASession />} />
         <Route path="/joe-mode" element={<JoeMode />} />
         <Route path="/founder" element={<FounderVision />} />
+        <Route element={<ReportAuth />}>
+          <Route element={<ReportLayout />}>
+            <Route path="/report" element={<ReportDashboard />} />
+            <Route path="/report/feedback" element={<FeedbackFeed />} />
+            <Route path="/report/settings" element={<Settings />} />
+            <Route path="/report/joe" element={<JoeModeManager />} />
+          </Route>
+        </Route>
       </Routes>
     </BrowserRouter>
   )
