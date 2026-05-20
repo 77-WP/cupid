@@ -86,8 +86,13 @@ function HappyMenu({ picks, setPicks, next, skip }: { picks: string[]; setPicks:
 
 function HappyVoice({ picks: _picks, next, skip }: { picks: string[]; next: (text: string) => void; skip: () => void }) {
   const [text, setText] = useState('')
+  const [nickname, setNickname] = useState(() => localStorage.getItem('cupid_nickname') || '')
   const hint = useCycle(openFrameQuestions.happy, 3000)
   const tags = ['บอกความรู้สึก', 'ขอเมนูใหม่', 'แนะนำอะไร', 'ชมทีมงาน']
+  const handleSubmit = () => {
+    if (nickname.trim()) localStorage.setItem('cupid_nickname', nickname.trim())
+    next(text)
+  }
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '8px 22px 0' }}>
@@ -103,10 +108,12 @@ function HappyVoice({ picks: _picks, next, skip }: { picks: string[]; next: (tex
               style={{ padding: '6px 12px', borderRadius: 999, background: 'transparent', border: `1.5px solid ${C.orange}`, color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
           ))}
         </div>
+        <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="ชื่อเล่นของคุณ (ไม่บังคับ)"
+          style={{ width: '100%', marginTop: 10, padding: '12px 16px', borderRadius: 14, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none' }} />
       </div>
       <div style={{ flex: 1 }} />
       <div style={{ padding: '0 16px 8px' }}>
-        <OrangeCTA label="ส่งให้ทีมงาน →" onClick={() => next(text)} />
+        <OrangeCTA label="ส่งให้ทีมงาน →" onClick={handleSubmit} />
         <SkipBtn onClick={skip} />
       </div>
     </div>

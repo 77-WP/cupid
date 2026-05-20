@@ -54,7 +54,7 @@ function NeutralCategory({ pickCat }: { pickCat: (id: string) => void }) {
   )
 }
 
-function NeutralText({ catId, text, setText, next, skip }: { catId: string; text: string; setText: (v: string) => void; next: () => void; skip: () => void }) {
+function NeutralText({ catId, text, setText, nickname, setNickname, next, skip }: { catId: string; text: string; setText: (v: string) => void; nickname: string; setNickname: (v: string) => void; next: () => void; skip: () => void }) {
   const cat = NEUTRAL_CATS.find((c) => c.id === catId) || NEUTRAL_CATS[0]
   const hint = useCycle(openFrameQuestions.neutral, 3000)
   const tagList = ['รสชาติ', 'ปริมาณ', 'บรรจุภัณฑ์', 'อื่นๆ']
@@ -71,13 +71,15 @@ function NeutralText({ catId, text, setText, next, skip }: { catId: string; text
       </div>
       <div style={{ padding: '14px 16px 0' }}>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={hint}
-          style={{ width: '100%', minHeight: 140, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.5 }} />
+          style={{ width: '100%', minHeight: 120, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none', lineHeight: 1.5 }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
           {tagList.map((t) => (
             <button key={t} onClick={() => setText(text ? `${text}\n#${t} ` : `#${t} `)}
               style={{ padding: '6px 12px', borderRadius: 999, background: 'transparent', border: `1.5px solid ${C.orange}`, color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
           ))}
         </div>
+        <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="ชื่อเล่นของคุณ (ไม่บังคับ)"
+          style={{ width: '100%', marginTop: 10, padding: '12px 16px', borderRadius: 14, border: '1.5px solid rgba(44,26,14,0.1)', background: '#fff', boxSizing: 'border-box', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, outline: 'none' }} />
       </div>
       <div style={{ flex: 1 }} />
       <div style={{ padding: '0 16px 8px' }}>
@@ -139,11 +141,15 @@ export default function NeutralPath() {
   const [step, setStep] = useState(0)
   const [catId, setCatId] = useState('')
   const [text, setText] = useState('')
+  const [nickname, setNickname] = useState(() => localStorage.getItem('cupid_nickname') || '')
   const hasMenuStep = catId === 'taste' || catId === 'portion'
   const totalSteps = hasMenuStep ? 3 : 2
   const back = () => step === 0 ? navigate('/landing') : setStep((s) => s - 1)
   const pickCat = (id: string) => { setCatId(id); setStep(1) }
-  const afterText = () => hasMenuStep ? setStep(2) : navigate('/thanks')
+  const afterText = () => {
+    if (nickname.trim()) localStorage.setItem('cupid_nickname', nickname.trim())
+    if (hasMenuStep) setStep(2); else navigate('/thanks')
+  }
 
   return (
     <MobileFrame>
@@ -158,7 +164,7 @@ export default function NeutralPath() {
           {Array.from({ length: totalSteps }).map((_, i) => <div key={i} style={{ width: 16, height: 3, borderRadius: 2, background: i <= step ? C.orange : 'rgba(44,26,14,0.12)' }} />)}
         </div>
         {step === 0 && <NeutralCategory pickCat={pickCat} />}
-        {step === 1 && <NeutralText catId={catId} text={text} setText={setText} next={afterText} skip={() => hasMenuStep ? setStep(2) : navigate('/thanks')} />}
+        {step === 1 && <NeutralText catId={catId} text={text} setText={setText} nickname={nickname} setNickname={setNickname} next={afterText} skip={() => { if (nickname.trim()) localStorage.setItem('cupid_nickname', nickname.trim()); if (hasMenuStep) setStep(2); else navigate('/thanks') }} />}
         {step === 2 && <NeutralMenu catId={catId} done={() => navigate('/thanks')} skip={() => navigate('/thanks')} />}
       </div>
     </MobileFrame>

@@ -14,6 +14,7 @@ const VOTE_OPTIONS = [
 export default function ThanksScreen() {
   const navigate = useNavigate()
   const [vote, setVote] = useState<string | null>(null)
+  const nickname = localStorage.getItem('cupid_nickname')
   const baseCounts: Record<string, number> = { A: 124, B: 98, C: 67, D: 53 }
   const counts = { ...baseCounts }
   if (vote) counts[vote]++
@@ -28,7 +29,7 @@ export default function ThanksScreen() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 28px 0' }}>
           <div className="bow-anim"><MascotBow size={160} /></div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: C.brown, marginTop: 8, textAlign: 'center', lineHeight: 1.25 }}>
-            ขอบคุณมากเลยครับ <span style={{ color: C.orange }}>❤︎</span>
+            {nickname ? <>ขอบคุณคุณ{nickname}มากเลยครับ <span style={{ color: C.orange }}>❤︎</span></> : <>ขอบคุณมากเลยครับ <span style={{ color: C.orange }}>❤︎</span></>}
           </div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brownSoft, marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
             คุณเป็นคนที่ <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>1,247</span> ที่ช่วยให้ Best Part ดีขึ้นครับ

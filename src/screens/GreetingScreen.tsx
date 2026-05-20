@@ -29,7 +29,11 @@ function Typewriter({ text, speed = 80 }: { text: string; speed?: number }) {
 export default function GreetingScreen() {
   const navigate = useNavigate()
   const [phase, setPhase] = useState(0)
-  const { main, sub } = getTimeGreeting()
+
+  const nickname = localStorage.getItem('cupid_nickname')
+  const { main, sub } = nickname
+    ? { main: `สวัสดีครับ คุณ${nickname} 👋`, sub: 'กลับมาอีกแล้วครับ ดีใจมากเลย ❤️' }
+    : getTimeGreeting()
 
   const skip = () => navigate('/landing')
 
