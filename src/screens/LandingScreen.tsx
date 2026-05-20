@@ -22,6 +22,7 @@ export default function LandingScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [joeEntries, setJoeEntries] = useState<JoeStrip[]>([])
   const [joeIdx, setJoeIdx] = useState(0)
+  const [nickname, setNickname] = useState(() => localStorage.getItem('cupid_nickname') || '')
 
   const tiles = [
     { key: 'happy', face: <FaceHappy size={60} />, label: 'ชอบมาก', sub: 'บอกต่อ',       path: '/happy' },
@@ -160,6 +161,13 @@ export default function LandingScreen() {
           <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
             <div style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 22, color: C.brown, lineHeight: 1 }}>342</div>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 2 }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</div>
+            <input
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              onBlur={() => { if (nickname.trim()) localStorage.setItem('cupid_nickname', nickname.trim()) }}
+              placeholder="ชื่อเล่นของคุณ (ไม่บังคับ)"
+              style={{ marginTop: 8, width: '100%', maxWidth: 180, background: 'transparent', border: 'none', borderBottom: '1px solid rgba(44,26,14,0.25)', outline: 'none', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brown, padding: '3px 0', borderRadius: 0 }}
+            />
           </div>
         </div>
       </div>

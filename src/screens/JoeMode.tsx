@@ -35,7 +35,7 @@ function StatusBadge({ status }: { status: JoeEntry['status'] }) {
     <div style={{
       display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 999,
       background: cfg.bg, fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 700,
-      color: cfg.color, animation: cfg.pulse ? 'badge-pulse 2s ease-in-out infinite' : undefined,
+      color: cfg.color, animation: cfg.pulse ? 'pulse 2s ease-in-out infinite' : undefined,
     }}>
       {cfg.label}
     </div>
@@ -137,7 +137,7 @@ export default function JoeMode() {
   return (
     <MobileFrame>
       <style>{`
-        @keyframes badge-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
       `}</style>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <StatusBar />
