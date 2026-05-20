@@ -71,16 +71,19 @@ export default function ReportDashboard() {
   useEffect(() => {
     async function load() {
       const now = new Date()
-      const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+      const today = new Date(now)
+      today.setHours(0, 0, 0, 0)
+      const todayISO = today.toISOString()
       const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
       const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-      // Mood counts (24h)
-      const { data: moodData } = await supabase
+      // Mood counts (today from midnight)
+      const { data: moodData, error: moodError } = await supabase
         .from('cupid_feedback')
         .select('mood')
-        .gte('created_at', h24)
+        .gte('created_at', todayISO)
 
+      console.log('Mood data:', moodData, 'Error:', moodError)
       if (moodData) {
         const counts: MoodCounts = { love: 0, ok: 0, problem: 0 }
         moodData.forEach(r => {
@@ -92,11 +95,12 @@ export default function ReportDashboard() {
       }
 
       // Source breakdown (7d)
-      const { data: srcData } = await supabase
+      const { data: srcData, error: srcError } = await supabase
         .from('cupid_feedback')
         .select('source')
         .gte('created_at', d7)
 
+      console.log('Source data:', srcData, 'Error:', srcError)
       if (srcData) {
         const map: Record<string, number> = {}
         srcData.forEach(r => { map[r.source] = (map[r.source] || 0) + 1 })
@@ -106,12 +110,13 @@ export default function ReportDashboard() {
       }
 
       // Menu vote leaderboard (30d, love mood)
-      const { data: voteData } = await supabase
+      const { data: voteData, error: voteError } = await supabase
         .from('cupid_feedback')
         .select('menu_picks')
         .in('mood', ['love', 'happy'])
         .gte('created_at', d30)
 
+      console.log('Vote data:', voteData, 'Error:', voteError)
       if (voteData) {
         const map: Record<string, number> = {}
         voteData.forEach(r => {
@@ -127,12 +132,13 @@ export default function ReportDashboard() {
       }
 
       // Latest 5 feedback
-      const { data: latestData } = await supabase
+      const { data: latestData, error: latestError } = await supabase
         .from('cupid_feedback')
         .select('id, mood, source, category, free_text, created_at, menu_picks, nickname, is_resolved')
         .order('created_at', { ascending: false })
         .limit(5)
 
+      console.log('Latest data:', latestData, 'Error:', latestError)
       if (latestData) setLatest(latestData as FeedbackRow[])
 
       setLoading(false)

@@ -37,6 +37,26 @@ interface JoeEntry {
   display_order: number
 }
 
+function thaiMonthYear(date = new Date()) {
+  const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  return `${MONTHS[date.getMonth()]} ${date.getFullYear() + 543}`
+}
+
+function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+      background: type === 'success' ? '#3F8E5C' : '#DC3232',
+      color: '#fff', borderRadius: 12, padding: '12px 24px',
+      fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 9999,
+      animation: 'fadeInUp .2s ease',
+    }}>
+      {msg}
+    </div>
+  )
+}
+
 const BLANK_ENTRY: Omit<JoeEntry, 'id'> = {
   title: '',
   icon: '⭐',
@@ -111,7 +131,7 @@ function EditForm({ initial, onSave, onCancel, saving }: EditFormProps) {
     ...initial,
     status_note: initial.status_note ?? null,
   })
-  const [newDate, setNewDate] = useState('')
+  const [newDate, setNewDate] = useState(thaiMonthYear())
   const [newNote, setNewNote] = useState('')
   const [newType, setNewType] = useState<'note' | 'done'>('note')
   const [addingTimeline, setAddingTimeline] = useState(false)
@@ -123,7 +143,7 @@ function EditForm({ initial, onSave, onCancel, saving }: EditFormProps) {
   function addTimeline() {
     if (!newDate || !newNote) return
     upd('timeline', [...form.timeline, { date: newDate, note: newNote, type: newType }])
-    setNewDate('')
+    setNewDate(thaiMonthYear())
     setNewNote('')
     setAddingTimeline(false)
   }
@@ -213,9 +233,10 @@ function EditForm({ initial, onSave, onCancel, saving }: EditFormProps) {
               <div>
                 <label style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, display: 'block', marginBottom: 4 }}>วันที่</label>
                 <input
-                  type="date"
+                  type="text"
                   value={newDate}
                   onChange={e => setNewDate(e.target.value)}
+                  placeholder="เม.ย. 2569"
                   style={{
                     width: '100%', padding: '8px 10px', borderRadius: 8, boxSizing: 'border-box',
                     border: '1.5px solid rgba(44,26,14,0.15)', fontFamily: '"Sarabun", system-ui',
@@ -224,7 +245,7 @@ function EditForm({ initial, onSave, onCancel, saving }: EditFormProps) {
                 />
               </div>
               <div>
-                <label style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, display: 'block', marginBottom: 4 }}>Type</label>
+                <label style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, display: 'block', marginBottom: 4 }}>ประเภท</label>
                 <select
                   value={newType}
                   onChange={e => setNewType(e.target.value as 'note' | 'done')}
@@ -234,8 +255,8 @@ function EditForm({ initial, onSave, onCancel, saving }: EditFormProps) {
                     fontSize: 13, outline: 'none', color: C.brown, background: '#fff', cursor: 'pointer',
                   }}
                 >
-                  <option value="note">📝 Note</option>
-                  <option value="done">✅ Done</option>
+                  <option value="note">📝 อัปเดต</option>
+                  <option value="done">✅ เสร็จแล้ว</option>
                 </select>
               </div>
             </div>
@@ -344,6 +365,12 @@ export default function JoeModeManager() {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | 'new' | null>(null)
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+
+  function showToast(msg: string, type: 'success' | 'error' = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 2800)
+  }
 
   useEffect(() => {
     loadEntries()
@@ -361,14 +388,23 @@ export default function JoeModeManager() {
 
   async function handleSave(id: string | 'new', form: Omit<JoeEntry, 'id'>) {
     setSaving(true)
+    let error
     if (id === 'new') {
-      await supabase.from('cupid_joe_mode').insert(form)
+      const res = await supabase.from('cupid_joe_mode').insert(form)
+      error = res.error
     } else {
-      await supabase.from('cupid_joe_mode').update(form).eq('id', id)
+      const res = await supabase.from('cupid_joe_mode').update({ ...form, updated_at: new Date().toISOString() }).eq('id', id)
+      error = res.error
     }
     await loadEntries()
     setEditingId(null)
     setSaving(false)
+    if (error) {
+      console.error('Save error:', error)
+      showToast('เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ', 'error')
+    } else {
+      showToast(id === 'new' ? '✨ เพิ่ม entry ใหม่แล้วครับ' : '✅ บันทึกเรียบร้อยครับ')
+    }
   }
 
   if (loading) {
@@ -500,6 +536,8 @@ export default function JoeModeManager() {
           ยังไม่มี entries ครับ<br />กด "+ เพิ่ม Entry ใหม่" เพื่อเริ่มได้เลย
         </div>
       )}
+
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
     </div>
   )
 }

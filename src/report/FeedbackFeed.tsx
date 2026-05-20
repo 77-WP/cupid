@@ -72,42 +72,38 @@ export default function FeedbackFeed() {
 
   useEffect(() => {
     loadFeedback()
-  }, [tab])
+  }, [])
 
   async function loadFeedback() {
     setLoading(true)
-    let q = supabase
+    const { data, error } = await supabase
       .from('cupid_feedback')
-      .select('id, mood, source, category, free_text, created_at, menu_picks, nickname, is_resolved')
+      .select('*')
       .order('created_at', { ascending: false })
-      .limit(100)
+      .limit(50)
 
-    if (tab === 'love') q = q.in('mood', ['love', 'happy'])
-    else if (tab === 'ok') q = q.eq('mood', 'ok')
-    else if (tab === 'problem') q = q.eq('mood', 'problem')
-    else if (tab === 'resolved') q = q.eq('is_resolved', true)
-
-    const { data } = await q
-    if (data) {
-      if (tab === 'resolved') {
-        setItems(data as FeedbackRow[])
-      } else if (tab === 'problem') {
-        setItems((data as FeedbackRow[]).filter(r => !r.is_resolved))
-      } else {
-        setItems(data as FeedbackRow[])
-      }
-    }
+    console.log('Feedback data:', data, 'Error:', error)
+    if (data) setItems(data as FeedbackRow[])
     setLoading(false)
   }
 
   async function markResolved(id: string) {
     setResolving(id)
     await supabase.from('cupid_feedback').update({ is_resolved: true }).eq('id', id)
-    setItems(prev => prev.filter(i => i.id !== id))
+    setItems(prev => prev.map(i => i.id === id ? { ...i, is_resolved: true } : i))
     setResolving(null)
   }
 
-  const textItems = items.filter(i => {
+  const filtered = (() => {
+    if (tab === 'all') return items
+    if (tab === 'love') return items.filter(i => i.mood === 'love' || i.mood === 'happy')
+    if (tab === 'ok') return items.filter(i => i.mood === 'ok')
+    if (tab === 'problem') return items.filter(i => i.mood === 'problem' && !i.is_resolved)
+    if (tab === 'resolved') return items.filter(i => i.is_resolved)
+    return items
+  })()
+
+  const textItems = filtered.filter(i => {
     if (!i.free_text?.trim()) return false
     if (textMoodFilter === 'all') return true
     if (textMoodFilter === 'love') return i.mood === 'love' || i.mood === 'happy'
@@ -141,12 +137,12 @@ export default function FeedbackFeed() {
           <div style={{ padding: 40, textAlign: 'center', color: C.brownSoft, fontFamily: '"Sarabun", system-ui' }}>
             กำลังโหลด...
           </div>
-        ) : items.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: C.brownSoft, fontFamily: '"Sarabun", system-ui', background: C.card, borderRadius: 18 }}>
             ไม่มีข้อมูลในหมวดนี้ครับ
           </div>
         ) : (
-          items.map(fb => {
+          filtered.map(fb => {
             const isProblem = fb.mood === 'problem' && !fb.is_resolved
             return (
               <div key={fb.id} style={{
