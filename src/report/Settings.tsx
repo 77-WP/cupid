@@ -325,25 +325,42 @@ export default function Settings() {
 
   async function handleSave() {
     setSaving(true)
-    const { error } = await supabase.from('cupid_settings').upsert({
-      id: 1,
-      announcement_is_active: data.announcement_is_active,
-      announcement_title: data.announcement_title || null,
-      announcement_text: data.announcement_text || null,
-      announcement_mode: data.announcement_mode,
-      announcement_vote_options: data.announcement_vote_options,
-      announcement_priority: data.announcement_priority,
-      qa_is_active: data.qa_is_active,
-      weekly_question: data.weekly_question || null,
-      weekly_question_options: data.weekly_question_options,
-      qa_priority: data.qa_priority,
-    })
-    setSaving(false)
-    if (error) {
-      console.error('Settings save error:', error)
-      showToast('เกิดข้อผิดพลาด กรุณาลองใหม่ครับ', 'error')
-    } else {
+    try {
+      const updateData: Record<string, unknown> = {
+        announcement_is_active: data.announcement_is_active,
+        announcement_title: data.announcement_title || '',
+        announcement_text: data.announcement_text || '',
+        announcement_mode: data.announcement_mode || 'info',
+        announcement_priority: data.announcement_priority || 'primary',
+        qa_is_active: data.qa_is_active,
+        weekly_question: data.weekly_question || '',
+        weekly_question_options: data.weekly_question_options.filter(o => o.trim() !== ''),
+        qa_priority: data.qa_priority || 'secondary',
+      }
+      if (data.announcement_mode === 'vote') {
+        updateData.announcement_vote_options = data.announcement_vote_options.filter(o => o.trim() !== '')
+      } else {
+        updateData.announcement_vote_options = data.announcement_vote_options
+      }
+
+      console.log('Saving settings:', updateData)
+
+      const { error } = await supabase
+        .from('cupid_settings')
+        .update(updateData)
+        .eq('id', 1)
+
+      if (error) {
+        console.error('Supabase error:', error.message, error.details, error.hint)
+        throw error
+      }
+
       showToast('บันทึกแล้วครับ ✓', 'success')
+    } catch (err) {
+      console.error('Save failed:', err)
+      showToast('เกิดข้อผิดพลาด กรุณาลองใหม่ครับ', 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
