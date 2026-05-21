@@ -49,9 +49,9 @@ interface FeedbackRow {
   mood: string
   source: string
   category?: string
-  free_text?: string
+  text?: string
   created_at: string
-  menu_picks?: string[]
+  menu_ids?: string[]
   nickname?: string
   is_resolved?: boolean
 }
@@ -70,76 +70,60 @@ export default function ReportDashboard() {
 
   useEffect(() => {
     async function load() {
-      const now = new Date()
-      const today = new Date(now)
-      today.setHours(0, 0, 0, 0)
-      const todayISO = today.toISOString()
-      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
-
-      // Mood counts (today from midnight)
-      const { data: moodData, error: moodError } = await supabase
+      // Single fetch — all filtering done client-side
+      const { data: allFeedback, error: fbError } = await supabase
         .from('cupid_feedback')
-        .select('mood')
-        .gte('created_at', todayISO)
+        .select('id, mood, source, created_at, text, category, is_resolved')
+        .order('created_at', { ascending: false })
 
-      console.log('Mood data:', moodData, 'Error:', moodError)
-      if (moodData) {
-        const counts: MoodCounts = { love: 0, ok: 0, problem: 0 }
-        moodData.forEach(r => {
-          if (r.mood === 'love' || r.mood === 'happy') counts.love++
-          else if (r.mood === 'ok') counts.ok++
-          else if (r.mood === 'problem') counts.problem++
+      console.log('All feedback:', allFeedback, fbError)
+
+      if (allFeedback) {
+        // Today's mood counts (from midnight)
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+        const todayFeedback = allFeedback.filter(f => new Date(f.created_at) >= todayStart)
+        setMoodCounts({
+          love: todayFeedback.filter(f => f.mood === 'love').length,
+          ok: todayFeedback.filter(f => f.mood === 'ok').length,
+          problem: todayFeedback.filter(f => f.mood === 'problem').length,
         })
-        setMoodCounts(counts)
+
+        // Source breakdown (last 7 days)
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        const weekFeedback = allFeedback.filter(f => new Date(f.created_at) >= sevenDaysAgo)
+        const srcMap: Record<string, number> = {}
+        weekFeedback.forEach(f => {
+          const src = f.source || 'unknown'
+          srcMap[src] = (srcMap[src] || 0) + 1
+        })
+        setSourceCounts(Object.entries(srcMap).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count))
+
+        // Latest 5
+        setLatest(allFeedback.slice(0, 5) as FeedbackRow[])
       }
 
-      // Source breakdown (7d)
-      const { data: srcData, error: srcError } = await supabase
-        .from('cupid_feedback')
-        .select('source')
-        .gte('created_at', d7)
-
-      console.log('Source data:', srcData, 'Error:', srcError)
-      if (srcData) {
-        const map: Record<string, number> = {}
-        srcData.forEach(r => { map[r.source] = (map[r.source] || 0) + 1 })
-        const arr = Object.entries(map).map(([source, count]) => ({ source, count }))
-        arr.sort((a, b) => b.count - a.count)
-        setSourceCounts(arr)
-      }
-
-      // Menu vote leaderboard (30d, love mood)
+      // Menu vote leaderboard — separate query using menu_ids column
       const { data: voteData, error: voteError } = await supabase
         .from('cupid_feedback')
-        .select('menu_picks')
-        .in('mood', ['love', 'happy'])
-        .gte('created_at', d30)
+        .select('menu_ids')
+        .not('menu_ids', 'is', null)
 
-      console.log('Vote data:', voteData, 'Error:', voteError)
+      console.log('Vote data:', voteData, voteError)
       if (voteData) {
-        const map: Record<string, number> = {}
-        voteData.forEach(r => {
-          (r.menu_picks || []).forEach((id: string) => {
-            map[id] = (map[id] || 0) + 1
+        const menuVotesMap: Record<string, number> = {}
+        voteData.forEach(row => {
+          (row.menu_ids || []).forEach((menuId: string) => {
+            menuVotesMap[menuId] = (menuVotesMap[menuId] || 0) + 1
           })
         })
-        const arr = Object.entries(map)
-          .map(([menu_id, votes]) => ({ menu_id, votes }))
-          .sort((a, b) => b.votes - a.votes)
+        const topMenus = Object.entries(menuVotesMap)
+          .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
-        setMenuVotes(arr)
+          .map(([menu_id, votes]) => ({ menu_id, votes }))
+        setMenuVotes(topMenus)
       }
-
-      // Latest 5 feedback
-      const { data: latestData, error: latestError } = await supabase
-        .from('cupid_feedback')
-        .select('id, mood, source, category, free_text, created_at, menu_picks, nickname, is_resolved')
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      console.log('Latest data:', latestData, 'Error:', latestError)
-      if (latestData) setLatest(latestData as FeedbackRow[])
 
       setLoading(false)
     }
@@ -318,7 +302,7 @@ export default function ReportDashboard() {
                       </span>
                     </div>
                     <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, lineHeight: 1.4 }}>
-                      {fb.free_text ? fb.free_text.slice(0, 50) + (fb.free_text.length > 50 ? '...' : '') : '—'}
+                      {fb.text ? fb.text.slice(0, 50) + (fb.text.length > 50 ? '...' : '') : '—'}
                     </div>
                   </div>
                   <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.4)', flexShrink: 0, marginTop: 2 }}>

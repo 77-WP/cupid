@@ -40,9 +40,9 @@ interface FeedbackRow {
   mood: string
   source: string
   category?: string
-  free_text?: string
+  text?: string
   created_at: string
-  menu_picks?: string[]
+  menu_ids?: string[]
   nickname?: string
   is_resolved?: boolean
 }
@@ -76,14 +76,14 @@ export default function FeedbackFeed() {
 
   async function loadFeedback() {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data: feedbackData, error } = await supabase
       .from('cupid_feedback')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(100)
 
-    console.log('Feedback data:', data, 'Error:', error)
-    if (data) setItems(data as FeedbackRow[])
+    console.log('Feedback feed:', feedbackData, error)
+    if (feedbackData) setItems(feedbackData as FeedbackRow[])
     setLoading(false)
   }
 
@@ -104,7 +104,7 @@ export default function FeedbackFeed() {
   })()
 
   const textItems = filtered.filter(i => {
-    if (!i.free_text?.trim()) return false
+    if (!i.text?.trim()) return false
     if (textMoodFilter === 'all') return true
     if (textMoodFilter === 'love') return i.mood === 'love' || i.mood === 'happy'
     return i.mood === textMoodFilter
@@ -192,19 +192,19 @@ export default function FeedbackFeed() {
                 </div>
 
                 {/* Content */}
-                {fb.free_text && (
+                {fb.text && (
                   <div style={{
                     fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown,
                     lineHeight: 1.65, marginBottom: 10,
                   }}>
-                    "{fb.free_text}"
+                    "{fb.text}"
                   </div>
                 )}
 
                 {/* Menu picks */}
-                {fb.menu_picks && fb.menu_picks.length > 0 && (
+                {fb.menu_ids && fb.menu_ids.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                    {fb.menu_picks.map(m => (
+                    {fb.menu_ids.map(m => (
                       <span key={m} style={{
                         padding: '3px 10px', borderRadius: 99, fontSize: 12,
                         fontFamily: '"Sarabun", system-ui', fontWeight: 600,
@@ -320,7 +320,7 @@ export default function FeedbackFeed() {
                   </span>
                 </div>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, lineHeight: 1.55 }}>
-                  {fb.free_text}
+                  {fb.text}
                 </div>
               </div>
             ))
