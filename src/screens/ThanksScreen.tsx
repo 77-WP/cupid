@@ -74,17 +74,18 @@ function MenuVote({ categories }: { categories: Category[] }) {
     if (tappedId) return
     setTappedId(menu.id)
 
-    // Save vote_choice (name_th) to cupid_feedback row
-    const lastId = sessionStorage.getItem('last_feedback_id')
-    if (lastId) {
+    // FIX 1: Save vote_choice (name_th) to cupid_feedback row
+    const feedbackId = sessionStorage.getItem('last_feedback_id')
+    console.log('Saving vote, feedback_id:', feedbackId, 'vote:', menu.name_th)
+    if (feedbackId) {
       const { error } = await supabase
         .from('cupid_feedback')
         .update({ vote_choice: menu.name_th })
-        .eq('id', lastId)
-      if (error) console.error('vote_choice update failed:', error.message, error.details)
-      else console.log('vote_choice saved:', menu.name_th)
+        .eq('id', feedbackId)
+      if (error) console.error('Vote save error:', error)
+      else console.log('Vote saved successfully')
     } else {
-      console.warn('No last_feedback_id in sessionStorage — vote not saved')
+      console.warn('No feedback_id in sessionStorage — cannot save vote')
     }
 
     // After 600ms cross-fade to thank-you card
@@ -139,7 +140,7 @@ function MenuVote({ categories }: { categories: Category[] }) {
           </div>
 
           {step === 'category' ? (
-            /* ── Step 1: Category Grid ── */
+            /* ── Step 1: Category Grid (3-col, 48px round icons) ── */
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {categories.map(cat => (
                 <button key={cat.id} onClick={() => handleCatSelect(cat)}
@@ -147,11 +148,16 @@ function MenuVote({ categories }: { categories: Category[] }) {
                     background: 'transparent', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', padding: '6px 4px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    transition: 'opacity .15s ease',
                   }}>
+                  {/* 48px round icon */}
                   <div style={{
-                    width: 52, height: 52, borderRadius: 26, overflow: 'hidden', flexShrink: 0,
-                  }}>
+                    width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0,
+                    outline: '2px solid transparent', outlineOffset: 2,
+                    transition: 'outline .12s ease',
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${C.orange}` }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.outline = '2px solid transparent' }}
+                  >
                     {cat.image_url ? (
                       <img src={cat.image_url} alt={cat.name_th}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -178,22 +184,17 @@ function MenuVote({ categories }: { categories: Category[] }) {
               ))}
             </div>
           ) : (
-            /* ── Step 2: Menu Grid ── */
+            /* ── Step 2: Vertical scrollable list ── */
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                <button onClick={() => setStep('category')}
-                  style={{
-                    background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
-                    fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.orange, fontWeight: 600,
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.orange} strokeWidth="2.2" strokeLinecap="round"><path d="M10 2L4 7l6 5"/></svg>
-                  กลับ
-                </button>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>
-                  {selectedCat?.name_th}
-                </div>
-              </div>
+              {/* Back button */}
+              <button onClick={() => setStep('category')}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer', padding: '0 0 10px',
+                  fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.orange, fontWeight: 500,
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                ← กลับ &nbsp;{selectedCat?.name_th}
+              </button>
 
               {loadingMenus ? (
                 <div style={{ textAlign: 'center', padding: '20px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
@@ -204,7 +205,10 @@ function MenuVote({ categories }: { categories: Category[] }) {
                   ไม่มีเมนูในหมวดนี้ครับ
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div style={{
+                  maxHeight: 280, overflowY: 'auto', padding: '4px',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+                }}>
                   {menuItems.map(menu => {
                     const on = tappedId === menu.id
                     const isDisabled = tappedId !== null && !on
@@ -212,19 +216,20 @@ function MenuVote({ categories }: { categories: Category[] }) {
                       <button key={menu.id} onClick={() => handleMenuSelect(menu)}
                         disabled={isDisabled}
                         style={{
-                          background: 'transparent', border: 'none', cursor: isDisabled ? 'default' : 'pointer',
-                          fontFamily: 'inherit', padding: '4px',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                          height: 64, borderRadius: 12,
+                          background: on ? '#FFF8F5' : '#fff',
+                          border: 'none',
+                          borderLeft: on ? `3px solid ${C.orange}` : '3px solid transparent',
+                          cursor: isDisabled ? 'default' : 'pointer',
                           opacity: isDisabled ? 0.4 : 1,
-                          transition: 'opacity .2s ease',
+                          fontFamily: 'inherit', textAlign: 'left',
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '0 12px',
+                          transition: 'opacity .2s ease, background .15s ease',
+                          flexShrink: 0,
                         }}>
-                        {/* Photo with orange ring on selected */}
+                        {/* Photo 56×56 */}
                         <div style={{
-                          width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
-                          outline: on ? `2px solid ${C.orange}` : '2px solid transparent',
-                          outlineOffset: 2,
-                          transform: on ? 'scale(1.06)' : 'scale(1)',
-                          transition: 'transform .3s ease, outline .15s ease',
+                          width: 56, height: 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
                         }}>
                           {menu.image_url ? (
                             <img src={menu.image_url} alt={menu.name_th}
@@ -240,19 +245,34 @@ function MenuVote({ categories }: { categories: Category[] }) {
                             </div>
                           )}
                         </div>
-                        <div style={{
-                          fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
-                          color: C.brown, lineHeight: 1.2, textAlign: 'center',
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          maxWidth: '100%',
-                        }}>
-                          {menu.name_th}
-                        </div>
-                        {menu.base_price != null && (
-                          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 10, color: C.orange, lineHeight: 1 }}>
-                            {menu.base_price} บาท
+                        {/* Name + price */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontFamily: '"Sarabun", system-ui', fontSize: 13, fontWeight: 600,
+                            color: C.brown, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}>
+                            {menu.name_th}
                           </div>
-                        )}
+                          {menu.base_price != null && (
+                            <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.orange, marginTop: 2 }}>
+                              {menu.base_price} บาท
+                            </div>
+                          )}
+                        </div>
+                        {/* Selection indicator */}
+                        <div style={{
+                          width: 18, height: 18, borderRadius: 9, flexShrink: 0,
+                          background: on ? C.orange : 'transparent',
+                          border: on ? `1.5px solid ${C.orange}` : '1.5px solid #ccc',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all .15s ease',
+                        }}>
+                          {on && (
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 5.5L4 7.5L8.5 3"/>
+                            </svg>
+                          )}
+                        </div>
                       </button>
                     )
                   })}
