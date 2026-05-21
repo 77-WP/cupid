@@ -15,14 +15,26 @@ export default function NeutralPath() {
   const hint = useCycle(openFrameQuestions.neutral, 3000)
 
   const handleSubmit = async () => {
+    console.log('Submit button clicked')
     setSubmitting(true)
-    const { data } = await supabase.from('cupid_feedback').insert({
+    const insertPayload = {
       mood: 'ok',
-      free_text: text.trim(),
+      text: text.trim(),
       category: 'open',
       source: sessionStorage.getItem('cupid_source') || 'unknown',
-    }).select('id').single()
-    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
+    }
+    console.log('=== NEUTRAL PATH SUBMIT ===', insertPayload)
+    const { data: insertData, error: insertError } = await supabase
+      .from('cupid_feedback')
+      .insert(insertPayload)
+      .select('id')
+      .single()
+    console.log('Insert result:', insertData, 'Error:', insertError)
+    if (insertError) console.error('INSERT FAILED:', insertError.message, insertError.details, insertError.hint)
+    if (insertData?.id) {
+      sessionStorage.setItem('last_feedback_id', insertData.id)
+      console.log('Saved feedback ID:', insertData.id)
+    }
     navigate('/thanks')
   }
 

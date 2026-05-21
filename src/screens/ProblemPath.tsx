@@ -71,15 +71,27 @@ function ProblemDetail({ catId, done }: { catId: string; done: () => void }) {
   const hint = useCycle(openFrameQuestions.problem, 3000)
 
   const handleSubmit = async () => {
+    console.log('Submit button clicked')
     setSubmitting(true)
-    const { data } = await supabase.from('cupid_feedback').insert({
+    const insertPayload = {
       mood: 'problem',
       category: catId,
-      menu_picks: sel,
-      free_text: note.trim() || null,
+      menu_ids: sel,
+      text: note.trim() || null,
       source: sessionStorage.getItem('cupid_source') || 'unknown',
-    }).select('id').single()
-    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
+    }
+    console.log('=== PROBLEM PATH SUBMIT ===', insertPayload)
+    const { data: insertData, error: insertError } = await supabase
+      .from('cupid_feedback')
+      .insert(insertPayload)
+      .select('id')
+      .single()
+    console.log('Insert result:', insertData, 'Error:', insertError)
+    if (insertError) console.error('INSERT FAILED:', insertError.message, insertError.details, insertError.hint)
+    if (insertData?.id) {
+      sessionStorage.setItem('last_feedback_id', insertData.id)
+      console.log('Saved feedback ID:', insertData.id)
+    }
     done()
   }
   return (

@@ -159,20 +159,35 @@ export default function HappyPath() {
   const back = () => step === 0 ? navigate('/landing') : setStep(0)
 
   const handleSubmit = async (text: string) => {
-    const { data } = await supabase.from('cupid_feedback').insert({
+    console.log('Submit button clicked')
+    const insertPayload = {
       mood: 'love',
-      free_text: text.trim() || null,
       source: sessionStorage.getItem('cupid_source') || 'unknown',
-    }).select('id').single()
-    if (data?.id) sessionStorage.setItem('last_feedback_id', data.id)
+      text: text.trim() || null,
+      category: 'open',
+    }
+    console.log('=== HAPPY PATH SUBMIT ===', insertPayload)
+    const { data: insertData, error: insertError } = await supabase
+      .from('cupid_feedback')
+      .insert(insertPayload)
+      .select('id')
+      .single()
+    console.log('Insert result:', insertData, 'Error:', insertError)
+    if (insertError) console.error('INSERT FAILED:', insertError.message, insertError.details, insertError.hint)
+    if (insertData?.id) {
+      sessionStorage.setItem('last_feedback_id', insertData.id)
+      console.log('Saved feedback ID:', insertData.id)
+    }
     setStep(1)
   }
 
   const handleSkip = async () => {
-    await supabase.from('cupid_feedback').insert({
+    console.log('=== HAPPY PATH SKIP ===')
+    const { error } = await supabase.from('cupid_feedback').insert({
       mood: 'love',
       source: sessionStorage.getItem('cupid_source') || 'unknown',
     })
+    if (error) console.error('SKIP INSERT FAILED:', error.message)
     setStep(1)
   }
 
