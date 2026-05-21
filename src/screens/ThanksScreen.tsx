@@ -52,173 +52,224 @@ function MenuVote({ categories }: { categories: Category[] }) {
   const [selectedCat, setSelectedCat] = useState<Category | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItemDB[]>([])
   const [loadingMenus, setLoadingMenus] = useState(false)
-  const [selectedMenu, setSelectedMenu] = useState<string | null>(null)
+  const [tappedId, setTappedId] = useState<string | null>(null)   // brief scale-up
+  const [voted, setVoted] = useState(false)                        // show thank-you card
 
   const handleCatSelect = async (cat: Category) => {
     setSelectedCat(cat)
     setLoadingMenus(true)
     setStep('menu')
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('menu_items')
       .select('id, name_th, image_url, base_price, display_order')
       .eq('category_id', cat.id)
       .eq('is_active', true)
       .order('display_order')
+    console.log('Menu items:', data, error)
     setMenuItems(data || [])
     setLoadingMenus(false)
   }
 
-  const handleMenuSelect = (menuId: string) => {
-    if (selectedMenu) return
-    setSelectedMenu(menuId)
-    sessionStorage.setItem('last_vote_menu', menuId)
+  const handleMenuSelect = async (menu: MenuItemDB) => {
+    if (tappedId) return
+    setTappedId(menu.id)
+
+    // Save vote_choice (name_th) to cupid_feedback row
     const lastId = sessionStorage.getItem('last_feedback_id')
     if (lastId) {
-      supabase.from('cupid_feedback').update({ menu_ids: [menuId] }).eq('id', lastId)
+      const { error } = await supabase
+        .from('cupid_feedback')
+        .update({ vote_choice: menu.name_th })
+        .eq('id', lastId)
+      if (error) console.error('vote_choice update failed:', error.message, error.details)
+      else console.log('vote_choice saved:', menu.name_th)
+    } else {
+      console.warn('No last_feedback_id in sessionStorage — vote not saved')
     }
+
+    // After 600ms cross-fade to thank-you card
+    setTimeout(() => setVoted(true), 600)
   }
 
   if (categories.length === 0) return null
 
   return (
     <div style={{
-      margin: '16px 16px 0', padding: '14px',
-      borderRadius: 18, background: 'rgba(232,98,42,0.06)',
-      border: '1px solid rgba(232,98,42,0.12)',
+      margin: '16px 16px 0',
+      borderRadius: 20,
+      background: C.cream,
+      padding: '16px',
+      // transition for cross-fade
+      transition: 'opacity .35s ease',
     }}>
-      <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, marginBottom: 2 }}>
-        เมนูไหนที่คุณชอบมากที่สุดครับ?
-      </div>
-      <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 10 }}>
-        ไม่บังคับนะครับ
-      </div>
 
-      {step === 'category' ? (
-        /* Step 1: Category Grid */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {categories.map(cat => (
-            <button key={cat.id} onClick={() => handleCatSelect(cat)}
-              style={{
-                padding: '10px 6px', borderRadius: 12,
-                border: '1.5px solid rgba(44,26,14,0.08)',
-                background: '#fff', cursor: 'pointer',
-                fontFamily: 'inherit', transition: 'all .15s ease',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.orange }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(44,26,14,0.08)' }}
-            >
-              {cat.image_url ? (
-                <img src={cat.image_url} alt={cat.name_th}
-                  style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }} />
-              ) : (
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10,
-                  background: 'rgba(232,98,42,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: C.orange,
-                }}>
-                  {cat.name_th.charAt(0)}
-                </div>
-              )}
-              <div style={{
-                fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 600,
-                color: C.brown, lineHeight: 1.3, textAlign: 'center',
-                overflow: 'hidden', display: '-webkit-box',
-                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-              }}>
-                {cat.name_th}
-              </div>
-            </button>
-          ))}
+      {/* Thank-you card (post-vote) */}
+      {voted ? (
+        <div style={{
+          background: '#fff',
+          borderRadius: 18,
+          padding: '20px 16px',
+          boxShadow: '0 4px 20px rgba(44,26,14,0.08)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          animation: 'voteThanksFadeIn .35s ease forwards',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 20,
+            background: 'rgba(232,98,42,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={C.orange} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 10.5L8 14.5L16 6"/>
+            </svg>
+          </div>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown }}>
+            รับทราบแล้วครับ 🙏
+          </div>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, textAlign: 'center' }}>
+            ขอบคุณที่ช่วยให้เราดีขึ้นครับ
+          </div>
         </div>
       ) : (
-        /* Step 2: Menu Grid */
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <button onClick={() => setStep('category')}
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0',
-                fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft,
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M10 2L4 7l6 5"/></svg>
-              กลับ
-            </button>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 700, color: C.brown }}>
-              {selectedCat?.name_th}
-            </div>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, marginBottom: 2 }}>
+            เมนูไหนที่คุณชอบมากที่สุดครับ?
+          </div>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 10 }}>
+            ไม่บังคับนะครับ
           </div>
 
-          {loadingMenus ? (
-            <div style={{ textAlign: 'center', padding: '20px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
-              กำลังโหลด...
-            </div>
-          ) : menuItems.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
-              ไม่มีเมนูในหมวดนี้ครับ
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-              {menuItems.map(menu => {
-                const on = selectedMenu === menu.id
-                const voted = selectedMenu !== null
-                return (
-                  <button key={menu.id} onClick={() => handleMenuSelect(menu.id)}
-                    disabled={voted && !on}
-                    style={{
-                      padding: '10px 8px', borderRadius: 12,
-                      border: `2px solid ${on ? C.orange : 'rgba(44,26,14,0.08)'}`,
-                      background: on ? '#FFF0E6' : '#fff',
-                      cursor: voted && !on ? 'default' : 'pointer',
-                      opacity: voted && !on ? 0.45 : 1,
-                      fontFamily: 'inherit', transition: 'all .18s ease',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                      position: 'relative',
-                    }}>
-                    {menu.image_url ? (
-                      <img src={menu.image_url} alt={menu.name_th}
-                        style={{ width: '100%', aspectRatio: '1', borderRadius: 8, objectFit: 'cover' }} />
+          {step === 'category' ? (
+            /* ── Step 1: Category Grid ── */
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {categories.map(cat => (
+                <button key={cat.id} onClick={() => handleCatSelect(cat)}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontFamily: 'inherit', padding: '6px 4px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    transition: 'opacity .15s ease',
+                  }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 26, overflow: 'hidden', flexShrink: 0,
+                  }}>
+                    {cat.image_url ? (
+                      <img src={cat.image_url} alt={cat.name_th}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <div style={{
-                        width: '100%', aspectRatio: '1', borderRadius: 8,
-                        background: 'rgba(44,26,14,0.05)',
+                        width: '100%', height: '100%',
+                        background: 'rgba(232,98,42,0.1)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 18, color: C.orange,
                       }}>
-                        {menu.name_th.charAt(0)}
+                        {cat.name_th.charAt(0)}
                       </div>
                     )}
-                    <div style={{
-                      fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
-                      color: C.brown, lineHeight: 1.3, textAlign: 'center',
-                      overflow: 'hidden', display: '-webkit-box',
-                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                    }}>
-                      {menu.name_th}
-                    </div>
-                    {menu.base_price != null && (
-                      <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 10, color: C.brownSoft }}>
-                        {menu.base_price} บาท
-                      </div>
-                    )}
-                    {on && (
-                      <div style={{
-                        position: 'absolute', top: 6, right: 6,
-                        width: 20, height: 20, borderRadius: 10,
-                        background: C.orange,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5L5 9.5L10.5 3"/></svg>
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
+                  </div>
+                  <div style={{
+                    fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
+                    color: C.brown, lineHeight: 1.3, textAlign: 'center',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                  }}>
+                    {cat.name_th}
+                  </div>
+                </button>
+              ))}
             </div>
+          ) : (
+            /* ── Step 2: Menu Grid ── */
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                <button onClick={() => setStep('category')}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+                    fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.orange, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.orange} strokeWidth="2.2" strokeLinecap="round"><path d="M10 2L4 7l6 5"/></svg>
+                  กลับ
+                </button>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>
+                  {selectedCat?.name_th}
+                </div>
+              </div>
+
+              {loadingMenus ? (
+                <div style={{ textAlign: 'center', padding: '20px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
+                  กำลังโหลด...
+                </div>
+              ) : menuItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
+                  ไม่มีเมนูในหมวดนี้ครับ
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {menuItems.map(menu => {
+                    const on = tappedId === menu.id
+                    const isDisabled = tappedId !== null && !on
+                    return (
+                      <button key={menu.id} onClick={() => handleMenuSelect(menu)}
+                        disabled={isDisabled}
+                        style={{
+                          background: 'transparent', border: 'none', cursor: isDisabled ? 'default' : 'pointer',
+                          fontFamily: 'inherit', padding: '4px',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                          opacity: isDisabled ? 0.4 : 1,
+                          transition: 'opacity .2s ease',
+                        }}>
+                        {/* Photo with orange ring on selected */}
+                        <div style={{
+                          width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
+                          outline: on ? `2px solid ${C.orange}` : '2px solid transparent',
+                          outlineOffset: 2,
+                          transform: on ? 'scale(1.06)' : 'scale(1)',
+                          transition: 'transform .3s ease, outline .15s ease',
+                        }}>
+                          {menu.image_url ? (
+                            <img src={menu.image_url} alt={menu.name_th}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          ) : (
+                            <div style={{
+                              width: '100%', height: '100%',
+                              background: 'rgba(44,26,14,0.06)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 18, color: C.orange,
+                            }}>
+                              {menu.name_th.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{
+                          fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
+                          color: C.brown, lineHeight: 1.2, textAlign: 'center',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                        }}>
+                          {menu.name_th}
+                        </div>
+                        {menu.base_price != null && (
+                          <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 10, color: C.orange, lineHeight: 1 }}>
+                            {menu.base_price} บาท
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
+
+      {/* Keyframe for thank-you card fade-in */}
+      <style>{`
+        @keyframes voteThanksFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   )
 }
