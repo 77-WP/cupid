@@ -58,7 +58,7 @@ interface FeedbackRow {
 
 interface MoodCounts { love: number; ok: number; problem: number }
 interface SourceCount { source: string; count: number }
-interface MenuVote { menu_id: string; votes: number }
+interface MenuVote { vote_choice: string; votes: number }
 
 export default function ReportDashboard() {
   const navigate = useNavigate()
@@ -104,25 +104,29 @@ export default function ReportDashboard() {
         setLatest(allFeedback.slice(0, 5) as FeedbackRow[])
       }
 
-      // Menu vote leaderboard — separate query using menu_ids column
+      // Menu vote leaderboard — from vote_choice column, last 30 days
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const { data: voteData, error: voteError } = await supabase
         .from('cupid_feedback')
-        .select('menu_ids')
-        .not('menu_ids', 'is', null)
+        .select('vote_choice')
+        .not('vote_choice', 'is', null)
+        .neq('vote_choice', '')
+        .gte('created_at', thirtyDaysAgo.toISOString())
 
       console.log('Vote data:', voteData, voteError)
       if (voteData) {
-        const menuVotesMap: Record<string, number> = {}
+        const voteMap: Record<string, number> = {}
         voteData.forEach(row => {
-          (row.menu_ids || []).forEach((menuId: string) => {
-            menuVotesMap[menuId] = (menuVotesMap[menuId] || 0) + 1
-          })
+          if (row.vote_choice) {
+            voteMap[row.vote_choice] = (voteMap[row.vote_choice] || 0) + 1
+          }
         })
-        const topMenus = Object.entries(menuVotesMap)
+        const topVotes = Object.entries(voteMap)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
-          .map(([menu_id, votes]) => ({ menu_id, votes }))
-        setMenuVotes(topMenus)
+          .map(([vote_choice, votes]) => ({ vote_choice, votes }))
+        setMenuVotes(topVotes)
       }
 
       setLoading(false)
@@ -229,14 +233,14 @@ export default function ReportDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {menuVotes.map((mv, i) => (
-                <div key={mv.menu_id} style={{
+                <div key={mv.vote_choice} style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                   borderRadius: 12, background: i === 0 ? '#FFF8E0' : 'rgba(44,26,14,0.03)',
                   border: `1px solid ${i === 0 ? 'rgba(245,166,35,0.3)' : 'rgba(44,26,14,0.06)'}`,
                 }}>
                   <span style={{ fontSize: 22, flexShrink: 0 }}>{MEDAL[i]}</span>
                   <div style={{ flex: 1, fontFamily: '"Sarabun", system-ui', fontSize: 14, fontWeight: 600, color: C.brown }}>
-                    {mv.menu_id}
+                    {mv.vote_choice}
                   </div>
                   <div style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 15, color: C.orange }}>
                     {mv.votes}

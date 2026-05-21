@@ -5,7 +5,6 @@ const C = {
   orange: '#E8622A',
   brown: '#2C1A0E',
   brownSoft: '#6B4A33',
-  amber: '#F5A623',
   card: '#fff',
 }
 
@@ -17,22 +16,21 @@ const SOURCE_LABELS: Record<string, string> = {
   unknown: 'อื่นๆ',
 }
 
-const SOURCE_COLORS: Record<string, string> = {
-  grab: '#00B14F',
-  lineman: '#D4A800',
-  shopee: '#EE4D2D',
-  kiosk: '#4A90D9',
-  unknown: '#9B9B9B',
+const MOOD_LABELS: Record<string, string> = {
+  love: 'ชอบมาก',
+  happy: 'ชอบมาก',
+  ok: 'โอเค',
+  problem: 'ปัญหา',
 }
 
 type FilterTab = 'all' | 'love' | 'ok' | 'problem' | 'resolved'
 
 const TABS: { id: FilterTab; label: string }[] = [
   { id: 'all', label: 'ทั้งหมด' },
-  { id: 'love', label: '😍 ชอบ' },
-  { id: 'ok', label: '😐 โอเค' },
-  { id: 'problem', label: '🚨 ปัญหา' },
-  { id: 'resolved', label: '✅ แก้แล้ว' },
+  { id: 'love', label: '😍' },
+  { id: 'ok', label: '😐' },
+  { id: 'problem', label: '🚨' },
+  { id: 'resolved', label: '✅' },
 ]
 
 interface FeedbackRow {
@@ -42,9 +40,10 @@ interface FeedbackRow {
   category?: string
   text?: string
   created_at: string
-  menu_ids?: string[]
   nickname?: string
   is_resolved?: boolean
+  vote_choice?: string
+  qa_answer?: string
 }
 
 function timeAgo(dateStr: string) {
@@ -63,12 +62,135 @@ function moodEmoji(mood: string) {
   return '🚨'
 }
 
+function FeedbackCard({
+  fb,
+  resolving,
+  onResolve,
+}: {
+  fb: FeedbackRow
+  resolving: string | null
+  onResolve: (id: string) => void
+}) {
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: 16,
+      padding: '16px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 28, lineHeight: 1 }}>{moodEmoji(fb.mood)}</span>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown }}>
+            {MOOD_LABELS[fb.mood] || 'ไม่ระบุ'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.4)' }}>
+            {timeAgo(fb.created_at)}
+          </span>
+          <span style={{
+            padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700,
+            fontFamily: '"DM Sans", system-ui',
+            background: C.orange, color: '#fff',
+          }}>
+            {SOURCE_LABELS[fb.source] || fb.source}
+          </span>
+        </div>
+      </div>
+
+      {/* Section 1: Feedback text + category tag */}
+      {fb.text?.trim() && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown, lineHeight: 1.65 }}>
+            {fb.text}
+          </div>
+          {fb.category && (
+            <span style={{
+              alignSelf: 'flex-start',
+              padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+              fontFamily: '"Sarabun", system-ui',
+              background: 'rgba(44,26,14,0.07)', color: C.brownSoft,
+            }}>
+              {fb.category}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Section 2: Menu vote */}
+      {fb.vote_choice?.trim() && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>
+            🍽 โหวตเมนู
+          </span>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, fontWeight: 600, color: C.orange }}>
+            {fb.vote_choice}
+          </span>
+        </div>
+      )}
+
+      {/* Section 3: Q&A answer */}
+      {fb.qa_answer?.trim() && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.45)' }}>
+            💬 ตอบคำถาม
+          </span>
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown }}>
+            {fb.qa_answer}
+          </span>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div style={{ height: 1, background: 'rgba(44,26,14,0.07)' }} />
+
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {fb.is_resolved ? (
+          <span style={{
+            padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+            fontFamily: '"Sarabun", system-ui',
+            background: 'rgba(63,142,92,0.12)', color: '#3F8E5C',
+          }}>
+            ✓ แก้แล้ว
+          </span>
+        ) : (
+          <button
+            onClick={() => onResolve(fb.id)}
+            disabled={resolving === fb.id}
+            style={{
+              background: 'transparent', border: 'none', padding: 0,
+              cursor: resolving === fb.id ? 'not-allowed' : 'pointer',
+              fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.4)',
+              opacity: resolving === fb.id ? 0.6 : 1,
+              transition: 'color .15s',
+            }}
+            onMouseEnter={e => { if (resolving !== fb.id) (e.currentTarget as HTMLButtonElement).style.color = '#3F8E5C' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(44,26,14,0.4)' }}
+          >
+            {resolving === fb.id ? '...' : 'ทำเครื่องหมายว่าแก้แล้ว'}
+          </button>
+        )}
+        {fb.nickname && (
+          <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.4)' }}>
+            คุณ{fb.nickname}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function FeedbackFeed() {
   const [tab, setTab] = useState<FilterTab>('all')
   const [items, setItems] = useState<FeedbackRow[]>([])
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState<string | null>(null)
-  const [textMoodFilter, setTextMoodFilter] = useState<string>('all')
 
   useEffect(() => {
     loadFeedback()
@@ -103,26 +225,20 @@ export default function FeedbackFeed() {
     return items
   })()
 
-  const textItems = filtered.filter(i => {
-    if (!i.text?.trim()) return false
-    if (textMoodFilter === 'all') return true
-    if (textMoodFilter === 'love') return i.mood === 'love' || i.mood === 'happy'
-    return i.mood === textMoodFilter
-  })
-
   return (
-    <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs — pill style */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{
-              padding: '8px 16px', borderRadius: 99, border: 'none', flexShrink: 0,
-              background: tab === t.id ? C.orange : '#fff',
+              padding: '7px 18px', borderRadius: 99, flexShrink: 0,
+              background: tab === t.id ? C.orange : 'transparent',
               color: tab === t.id ? '#fff' : C.brownSoft,
+              border: tab === t.id ? '1.5px solid transparent' : '1.5px solid rgba(44,26,14,0.2)',
               fontFamily: '"Sarabun", system-ui', fontWeight: tab === t.id ? 700 : 400,
-              fontSize: 13, cursor: 'pointer', boxShadow: '0 1px 4px rgba(44,26,14,0.08)',
+              fontSize: 13, cursor: 'pointer',
               transition: 'all .15s ease',
             }}
           >
@@ -131,202 +247,26 @@ export default function FeedbackFeed() {
         ))}
       </div>
 
-      {/* Feedback List */}
+      {/* Card stack */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: C.brownSoft, fontFamily: '"Sarabun", system-ui' }}>
             กำลังโหลด...
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: C.brownSoft, fontFamily: '"Sarabun", system-ui', background: C.card, borderRadius: 18 }}>
+          <div style={{
+            padding: 40, textAlign: 'center', color: C.brownSoft,
+            fontFamily: '"Sarabun", system-ui', background: C.card, borderRadius: 16,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+          }}>
             ไม่มีข้อมูลในหมวดนี้ครับ
           </div>
         ) : (
-          filtered.map(fb => {
-            const isProblem = fb.mood === 'problem' && !fb.is_resolved
-            return (
-              <div key={fb.id} style={{
-                background: C.card, borderRadius: 18,
-                border: `1px solid ${isProblem ? 'rgba(220,50,50,0.2)' : 'rgba(44,26,14,0.07)'}`,
-                borderLeft: isProblem ? '4px solid #DC3232' : '4px solid transparent',
-                padding: '16px 18px',
-              }}>
-                {/* Header row */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontSize: 24, flexShrink: 0 }}>{moodEmoji(fb.mood)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                      {/* Source badge */}
-                      <span style={{
-                        padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-                        fontFamily: '"DM Sans", system-ui',
-                        background: SOURCE_COLORS[fb.source] || '#9B9B9B',
-                        color: fb.source === 'lineman' ? '#1A1A1A' : '#fff',
-                      }}>
-                        {SOURCE_LABELS[fb.source] || fb.source}
-                      </span>
-                      {/* Category badge */}
-                      {fb.category && (
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 99, fontSize: 11,
-                          fontFamily: '"Sarabun", system-ui', fontWeight: 600,
-                          background: 'rgba(44,26,14,0.08)', color: C.brownSoft,
-                        }}>
-                          {fb.category}
-                        </span>
-                      )}
-                      {fb.is_resolved && (
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-                          fontFamily: '"Sarabun", system-ui',
-                          background: 'rgba(63,142,92,0.15)', color: '#3F8E5C',
-                        }}>
-                          ✅ แก้แล้ว
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.4)', flexShrink: 0 }}>
-                    {timeAgo(fb.created_at)}
-                  </div>
-                </div>
-
-                {/* Content */}
-                {fb.text && (
-                  <div style={{
-                    fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown,
-                    lineHeight: 1.65, marginBottom: 10,
-                  }}>
-                    "{fb.text}"
-                  </div>
-                )}
-
-                {/* Menu picks */}
-                {fb.menu_ids && fb.menu_ids.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                    {fb.menu_ids.map(m => (
-                      <span key={m} style={{
-                        padding: '3px 10px', borderRadius: 99, fontSize: 12,
-                        fontFamily: '"Sarabun", system-ui', fontWeight: 600,
-                        background: '#FFF0E6', color: C.orange,
-                        border: '1px solid rgba(232,98,42,0.2)',
-                      }}>
-                        🍜 {m}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Footer row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {fb.nickname ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{
-                        width: 18, height: 18, borderRadius: 9, background: C.orange,
-                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 9, fontWeight: 700, flexShrink: 0,
-                      }}>
-                        {fb.nickname.charAt(0)}
-                      </div>
-                      <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>
-                        คุณ{fb.nickname}
-                      </span>
-                    </div>
-                  ) : (
-                    <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.3)' }}>
-                      ไม่ระบุชื่อ
-                    </span>
-                  )}
-
-                  {isProblem && (
-                    <button
-                      onClick={() => markResolved(fb.id)}
-                      disabled={resolving === fb.id}
-                      style={{
-                        padding: '6px 14px', borderRadius: 10, border: '1.5px solid #3F8E5C',
-                        background: 'transparent', color: '#3F8E5C',
-                        fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12,
-                        cursor: resolving === fb.id ? 'not-allowed' : 'pointer',
-                        opacity: resolving === fb.id ? 0.6 : 1,
-                        transition: 'all .15s',
-                      }}
-                    >
-                      {resolving === fb.id ? '...' : 'Mark as resolved'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })
+          filtered.map(fb => (
+            <FeedbackCard key={fb.id} fb={fb} resolving={resolving} onResolve={markResolved} />
+          ))
         )}
       </div>
-
-      {/* Open Text Insights */}
-      <section style={{ marginTop: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2 style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: C.brown, margin: 0 }}>
-            💬 สิ่งที่ลูกค้าบอกตรงๆ
-          </h2>
-          {/* Mood filter */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[
-              { val: 'all', label: 'ทั้งหมด' },
-              { val: 'love', label: '😍' },
-              { val: 'ok', label: '😐' },
-              { val: 'problem', label: '🚨' },
-            ].map(f => (
-              <button key={f.val} onClick={() => setTextMoodFilter(f.val)}
-                style={{
-                  padding: '4px 10px', borderRadius: 99, border: 'none',
-                  background: textMoodFilter === f.val ? C.brown : 'rgba(44,26,14,0.08)',
-                  color: textMoodFilter === f.val ? '#fff' : C.brownSoft,
-                  fontFamily: '"Sarabun", system-ui', fontSize: 12, cursor: 'pointer',
-                }}>
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{
-          background: C.card, borderRadius: 18, padding: '16px 18px',
-          border: '1px solid rgba(44,26,14,0.07)',
-          maxHeight: 400, overflowY: 'auto',
-          display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          {textItems.length === 0 ? (
-            <div style={{ color: C.brownSoft, fontFamily: '"Sarabun", system-ui', fontSize: 14, textAlign: 'center', padding: '20px 0' }}>
-              ไม่มีข้อความในหมวดนี้ครับ
-            </div>
-          ) : (
-            textItems.map(fb => (
-              <div key={fb.id} style={{
-                padding: '10px 14px', borderRadius: 12,
-                background: 'rgba(44,26,14,0.03)',
-                borderLeft: `3px solid ${fb.mood === 'problem' ? '#DC3232' : fb.mood === 'ok' ? '#F5A623' : C.orange}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 14 }}>{moodEmoji(fb.mood)}</span>
-                  <span style={{
-                    padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 700,
-                    fontFamily: '"DM Sans", system-ui',
-                    background: SOURCE_COLORS[fb.source] || '#9B9B9B',
-                    color: fb.source === 'lineman' ? '#1A1A1A' : '#fff',
-                  }}>
-                    {SOURCE_LABELS[fb.source] || fb.source}
-                  </span>
-                  <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 10, color: 'rgba(44,26,14,0.35)', marginLeft: 'auto' }}>
-                    {timeAgo(fb.created_at)}
-                  </span>
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, lineHeight: 1.55 }}>
-                  {fb.text}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
     </div>
   )
 }
