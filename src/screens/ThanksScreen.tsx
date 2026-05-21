@@ -8,10 +8,19 @@ import { supabase } from '../lib/supabase'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface MenuItem {
+interface Category {
   id: string
-  name: string
-  emoji?: string
+  name_th: string
+  image_url: string | null
+  display_order: number
+}
+
+interface MenuItemDB {
+  id: string
+  name_th: string
+  image_url: string | null
+  base_price: number | null
+  display_order: number
 }
 
 interface JoeEntry {
@@ -34,14 +43,34 @@ interface CupidSettings {
   qa_priority: string | null
 }
 
-// ── Section: Menu Vote ─────────────────────────────────────────────────────
+// ── Section: Menu Vote (2-step: category → menu) ──────────────────────────
 
-function MenuVote({ menus }: { menus: MenuItem[] }) {
-  const [selected, setSelected] = useState<string | null>(null)
+const BEST_SELLER_CAT_ID = 'c492de49-8cf0-4e00-9602-cebeb3ce7921'
 
-  const handleSelect = (menuId: string) => {
-    if (selected) return
-    setSelected(menuId)
+function MenuVote({ categories }: { categories: Category[] }) {
+  const [step, setStep] = useState<'category' | 'menu'>('category')
+  const [selectedCat, setSelectedCat] = useState<Category | null>(null)
+  const [menuItems, setMenuItems] = useState<MenuItemDB[]>([])
+  const [loadingMenus, setLoadingMenus] = useState(false)
+  const [selectedMenu, setSelectedMenu] = useState<string | null>(null)
+
+  const handleCatSelect = async (cat: Category) => {
+    setSelectedCat(cat)
+    setLoadingMenus(true)
+    setStep('menu')
+    const { data } = await supabase
+      .from('menu_items')
+      .select('id, name_th, image_url, base_price, display_order')
+      .eq('category_id', cat.id)
+      .eq('is_active', true)
+      .order('display_order')
+    setMenuItems(data || [])
+    setLoadingMenus(false)
+  }
+
+  const handleMenuSelect = (menuId: string) => {
+    if (selectedMenu) return
+    setSelectedMenu(menuId)
     sessionStorage.setItem('last_vote_menu', menuId)
     const lastId = sessionStorage.getItem('last_feedback_id')
     if (lastId) {
@@ -49,7 +78,7 @@ function MenuVote({ menus }: { menus: MenuItem[] }) {
     }
   }
 
-  if (menus.length === 0) return null
+  if (categories.length === 0) return null
 
   return (
     <div style={{
@@ -60,48 +89,136 @@ function MenuVote({ menus }: { menus: MenuItem[] }) {
       <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, marginBottom: 2 }}>
         เมนูไหนที่คุณชอบมากที่สุดครับ?
       </div>
-      <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 12 }}>
+      <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, marginBottom: 10 }}>
         ไม่บังคับนะครับ
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-        {menus.map(menu => {
-          const on = selected === menu.id
-          const voted = selected !== null
-          return (
-            <button key={menu.id} onClick={() => handleSelect(menu.id)} disabled={voted && !on}
+
+      {step === 'category' ? (
+        /* Step 1: Category Grid */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {categories.map(cat => (
+            <button key={cat.id} onClick={() => handleCatSelect(cat)}
               style={{
                 padding: '10px 6px', borderRadius: 12,
-                border: `2px solid ${on ? C.orange : 'rgba(44,26,14,0.08)'}`,
-                background: on ? '#FFF0E6' : '#fff',
-                cursor: voted && !on ? 'default' : 'pointer',
-                opacity: voted && !on ? 0.45 : 1,
-                fontFamily: 'inherit', transition: 'all .18s ease',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              }}>
-              <div style={{
-                fontSize: 24, lineHeight: 1, width: 40, height: 40,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 10, background: on ? 'rgba(232,98,42,0.1)' : 'rgba(44,26,14,0.05)',
-              }}>
-                {menu.emoji || (
-                  <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 14, color: C.orange }}>
-                    {menu.name.charAt(0)}
-                  </span>
-                )}
-              </div>
+                border: '1.5px solid rgba(44,26,14,0.08)',
+                background: '#fff', cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all .15s ease',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.orange }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(44,26,14,0.08)' }}
+            >
+              {cat.image_url ? (
+                <img src={cat.image_url} alt={cat.name_th}
+                  style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }} />
+              ) : (
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10,
+                  background: 'rgba(232,98,42,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: C.orange,
+                }}>
+                  {cat.name_th.charAt(0)}
+                </div>
+              )}
               <div style={{
                 fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 600,
                 color: C.brown, lineHeight: 1.3, textAlign: 'center',
                 overflow: 'hidden', display: '-webkit-box',
                 WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
               }}>
-                {menu.name}
+                {cat.name_th}
               </div>
-              {on && <div style={{ fontSize: 11, color: C.orange, fontWeight: 700 }}>✓</div>}
             </button>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        /* Step 2: Menu Grid */
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <button onClick={() => setStep('category')}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0',
+                fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft,
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M10 2L4 7l6 5"/></svg>
+              กลับ
+            </button>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 700, color: C.brown }}>
+              {selectedCat?.name_th}
+            </div>
+          </div>
+
+          {loadingMenus ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
+              กำลังโหลด...
+            </div>
+          ) : menuItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
+              ไม่มีเมนูในหมวดนี้ครับ
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              {menuItems.map(menu => {
+                const on = selectedMenu === menu.id
+                const voted = selectedMenu !== null
+                return (
+                  <button key={menu.id} onClick={() => handleMenuSelect(menu.id)}
+                    disabled={voted && !on}
+                    style={{
+                      padding: '10px 8px', borderRadius: 12,
+                      border: `2px solid ${on ? C.orange : 'rgba(44,26,14,0.08)'}`,
+                      background: on ? '#FFF0E6' : '#fff',
+                      cursor: voted && !on ? 'default' : 'pointer',
+                      opacity: voted && !on ? 0.45 : 1,
+                      fontFamily: 'inherit', transition: 'all .18s ease',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                      position: 'relative',
+                    }}>
+                    {menu.image_url ? (
+                      <img src={menu.image_url} alt={menu.name_th}
+                        style={{ width: '100%', aspectRatio: '1', borderRadius: 8, objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{
+                        width: '100%', aspectRatio: '1', borderRadius: 8,
+                        background: 'rgba(44,26,14,0.05)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 18, color: C.orange,
+                      }}>
+                        {menu.name_th.charAt(0)}
+                      </div>
+                    )}
+                    <div style={{
+                      fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
+                      color: C.brown, lineHeight: 1.3, textAlign: 'center',
+                      overflow: 'hidden', display: '-webkit-box',
+                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    }}>
+                      {menu.name_th}
+                    </div>
+                    {menu.base_price != null && (
+                      <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 10, color: C.brownSoft }}>
+                        {menu.base_price} บาท
+                      </div>
+                    )}
+                    {on && (
+                      <div style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 20, height: 20, borderRadius: 10,
+                        background: C.orange,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5L5 9.5L10.5 3"/></svg>
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -302,7 +419,7 @@ export default function ThanksScreen() {
   const navigate = useNavigate()
 
   const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
-  const [menus, setMenus] = useState<MenuItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [settings, setSettings] = useState<CupidSettings | null>(null)
   const [joeEntry, setJoeEntry] = useState<JoeEntry | null>(null)
 
@@ -311,9 +428,16 @@ export default function ThanksScreen() {
       if (count != null) setFeedbackCount(count)
     })
 
-    supabase.from('menus').select('id, name, emoji').order('display_order').limit(6).then(({ data, error }) => {
-      if (!error && data && data.length > 0) setMenus(data as MenuItem[])
-    })
+    supabase
+      .from('categories')
+      .select('id, name_th, image_url, display_order')
+      .neq('id', BEST_SELLER_CAT_ID)
+      .order('display_order')
+      .limit(6)
+      .then(({ data, error }) => {
+        console.log('Categories:', data, error)
+        if (!error && data && data.length > 0) setCategories(data as Category[])
+      })
 
     supabase.from('cupid_settings').select('*').eq('id', 1).single().then(({ data }) => {
       if (data) setSettings(data as CupidSettings)
@@ -374,7 +498,7 @@ export default function ThanksScreen() {
         </div>
 
         {/* ── Menu Vote ── */}
-        <MenuVote menus={menus} />
+        <MenuVote categories={categories} />
 
         {/* ── Announcement + Q&A (ordered by priority) ── */}
         {settings && cards.length > 0 && (
