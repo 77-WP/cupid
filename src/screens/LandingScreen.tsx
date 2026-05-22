@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotBowl, FaceHappy, FaceNeutral, FaceAlert, HeartLogo } from '../components/Illustrations'
-import { StepDots, C } from '../components/SharedUI'
+import { MascotBowl, HeartLogo } from '../components/Illustrations'
+import { C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
 
 const TILE_TOASTS: Record<string, string> = {
@@ -11,26 +11,21 @@ const TILE_TOASTS: Record<string, string> = {
   bad:   'เดี๋ยวเราดูแลให้นะครับ 🙏',
 }
 
-// Shared card shadow used across sections
-const CARD_SHADOW = '0 1px 4px rgba(44,26,14,0.08), 0 4px 16px rgba(44,26,14,0.05)'
+const CARD_SHADOW = '0 1px 4px rgba(44,26,14,0.07), 0 3px 12px rgba(44,26,14,0.05)'
 const CARD_BORDER = '1.5px solid rgba(44,26,14,0.06)'
 
-const SECTION_LABEL: React.CSSProperties = {
-  fontFamily: '"Sarabun", system-ui',
-  fontWeight: 700,
-  fontSize: 11,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: C.orange,
-  marginBottom: 12,
-}
+const tiles = [
+  { key: 'happy', label: 'ชอบมาก',  sub: 'บอกต่อ',        path: '/happy'   },
+  { key: 'okay',  label: 'โอเค',    sub: 'แสดงความคิด',   path: '/neutral' },
+  { key: 'bad',   label: 'มีปัญหา', sub: 'แจ้งด่วน',      path: '/problem' },
+]
 
 const socialItems = [
-  { letter: 'W', label: 'เว็บไซต์', href: 'https://bestpartbowls.com' },
-  { letter: 'L', label: 'LINE',     href: '#' },
-  { letter: 'F', label: 'Facebook', href: '#' },
-  { letter: 'T', label: 'TikTok',   href: '#' },
-  { letter: 'M', label: 'แผนที่',  href: '#' },
+  { key: 'W', href: 'https://bestpartbowls.com' },
+  { key: 'L', href: '#' },
+  { key: 'F', href: '#' },
+  { key: 'T', href: '#' },
+  { key: 'M', href: '#' },
 ]
 
 export default function LandingScreen() {
@@ -53,27 +48,19 @@ export default function LandingScreen() {
     }, 900)
   }
 
-  const tiles = [
-    {
-      key: 'happy', face: <FaceHappy size={28} />, label: 'ชอบมาก', sub: 'บอกต่อ',
-      path: '/happy', accentColor: '#E8622A', faceBg: 'rgba(232,98,42,0.1)',
-    },
-    {
-      key: 'okay', face: <FaceNeutral size={28} />, label: 'โอเค', sub: 'แสดงความคิด',
-      path: '/neutral', accentColor: '#F5A623', faceBg: 'rgba(245,166,35,0.1)',
-    },
-    {
-      key: 'bad', face: <FaceAlert size={28} />, label: 'มีปัญหา', sub: 'แจ้งด่วน',
-      path: '/problem', accentColor: '#8B2000', faceBg: 'rgba(139,32,0,0.1)',
-    },
-  ]
-
   return (
     <MobileFrame>
       <style>{`
         @keyframes toast-in {
           from { opacity: 0; transform: translate(-50%, 8px) scale(0.94); }
           to   { opacity: 1; transform: translate(-50%, 0)   scale(1); }
+        }
+        .cta-pill:hover, .cta-pill:active {
+          background: #E8622A !important;
+          color: #fff !important;
+        }
+        .social-icon:hover, .social-icon:active {
+          opacity: 1 !important;
         }
       `}</style>
 
@@ -123,54 +110,39 @@ export default function LandingScreen() {
               onMouseLeave={() => setHover(null)}
               onClick={() => handleTileTap(t.key, t.path)}
               style={{
-                background: '#FFFFFF',
-                borderRadius: 16,
-                border: CARD_BORDER,
-                boxShadow: CARD_SHADOW,
+                background: 'transparent',
+                border: 'none',
+                boxShadow: 'none',
+                padding: '12px 4px 10px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 cursor: 'pointer',
-                overflow: 'hidden',
-                padding: 0,
-                transition: 'transform 0.15s ease',
-                transform: hover === t.key ? 'scale(0.97)' : 'scale(1)',
+                transition: 'transform 0.15s ease, opacity 0.15s ease',
+                transform: hover === t.key ? 'scale(0.95)' : 'scale(1)',
+                opacity: hover === t.key ? 0.8 : 1,
                 fontFamily: 'inherit',
               }}
             >
-              {/* Accent bar */}
-              <div style={{ width: '100%', height: 3, background: t.accentColor, flexShrink: 0 }} />
-              {/* Card body */}
-              <div style={{ padding: '16px 10px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: '50%',
-                  background: t.faceBg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {t.face}
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 10, textAlign: 'center' }}>
-                  {t.label}
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, opacity: 0.7, marginTop: 3, textAlign: 'center' }}>
-                  {t.sub}
-                </div>
+              {/* Illustration placeholder */}
+              <div style={{
+                width: 72, height: 72, borderRadius: 14,
+                background: 'rgba(44,26,14,0.06)',
+                border: '1.5px dashed rgba(44,26,14,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontFamily: '"DM Sans", system-ui', fontSize: 18, color: 'rgba(44,26,14,0.2)', lineHeight: 1 }}>+</span>
+              </div>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 8, textAlign: 'center' }}>
+                {t.label}
+              </div>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, opacity: 0.65, marginTop: 3, textAlign: 'center' }}>
+                {t.sub}
               </div>
             </button>
           ))}
         </div>
 
-        {/* Vision link */}
-        <div style={{ textAlign: 'center', paddingTop: 14 }}>
-          <button
-            onClick={() => navigate('/founder')}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          >
-            วิสัยทัศน์ของเรา <span style={{ color: C.orange }}>→</span>
-          </button>
-        </div>
-
         {/* ── FEATURE CARDS ── */}
-        <div style={{ padding: '0 16px', marginTop: 28 }}>
-          <div style={SECTION_LABEL}>เกี่ยวกับ Cupid</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px', marginTop: 16 }}>
 
           {/* Card — เหมือนฝัน */}
           <button
@@ -178,32 +150,34 @@ export default function LandingScreen() {
             style={{
               background: '#FFFFFF',
               borderRadius: 16,
-              padding: 16,
-              display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 14,
+              padding: '16px 14px 14px',
+              display: 'flex', flexDirection: 'column',
               boxShadow: CARD_SHADOW,
               border: CARD_BORDER,
-              marginBottom: 10,
               cursor: 'pointer',
-              width: '100%',
+              minHeight: 130,
               textAlign: 'left',
               fontFamily: 'inherit',
               boxSizing: 'border-box',
             }}
           >
             <div style={{
-              width: 72, height: 72, flexShrink: 0,
-              borderRadius: 12,
-              background: '#F0EBE3',
+              width: 44, height: 44, borderRadius: 10,
+              background: 'rgba(44,26,14,0.05)',
+              border: '1.5px dashed rgba(44,26,14,0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 9, color: '#B8A898' }}>72×72</span>
+              <span style={{ fontSize: 14, color: 'rgba(44,26,14,0.2)', fontFamily: '"DM Sans", system-ui', lineHeight: 1 }}>+</span>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: C.brown }}>เหมือนฝัน</div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, lineHeight: 1.5, marginTop: 3 }}>
-                ดูว่า Best Part พัฒนาอะไรไปแล้วบ้าง
-              </div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.orange, marginTop: 8 }}>ดูเลย →</div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 10 }}>
+              เหมือนฝัน
+            </div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, lineHeight: 1.5, marginTop: 4 }}>
+              ดูพัฒนาการของ Best Part
+            </div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.orange, marginTop: 'auto', paddingTop: 8 }}>
+              ดูเลย →
             </div>
           </button>
 
@@ -213,92 +187,89 @@ export default function LandingScreen() {
             style={{
               background: '#FFFFFF',
               borderRadius: 16,
-              padding: 16,
-              display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 14,
+              padding: '16px 14px 14px',
+              display: 'flex', flexDirection: 'column',
               boxShadow: CARD_SHADOW,
               border: CARD_BORDER,
-              marginBottom: 0,
               cursor: 'pointer',
-              width: '100%',
+              minHeight: 130,
               textAlign: 'left',
               fontFamily: 'inherit',
               boxSizing: 'border-box',
             }}
           >
             <div style={{
-              width: 72, height: 72, flexShrink: 0,
-              borderRadius: 12,
-              background: '#F0EBE3',
+              width: 44, height: 44, borderRadius: 10,
+              background: 'rgba(44,26,14,0.05)',
+              border: '1.5px dashed rgba(44,26,14,0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 9, color: '#B8A898' }}>72×72</span>
+              <span style={{ fontSize: 14, color: 'rgba(44,26,14,0.2)', fontFamily: '"DM Sans", system-ui', lineHeight: 1 }}>+</span>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: C.brown }}>จดหมายจากผู้ก่อตั้ง</div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, lineHeight: 1.5, marginTop: 3 }}>
-                Wiphu เขียนถึงคุณโดยตรง
-              </div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.orange, marginTop: 8 }}>อ่านเลย →</div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 10, lineHeight: 1.35 }}>
+              จดหมายจาก{'\n'}ผู้ก่อตั้ง
+            </div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: C.brownSoft, lineHeight: 1.5, marginTop: 4 }}>
+              Wiphu เขียนถึงคุณ
+            </div>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.orange, marginTop: 'auto', paddingTop: 8 }}>
+              อ่านเลย →
             </div>
           </button>
         </div>
 
-        {/* ── SOCIAL / CONTACT ROW ── */}
-        <div style={{ padding: '0 16px', marginTop: 8 }}>
-          <div style={SECTION_LABEL}>ติดต่อเรา</div>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 16,
-            padding: '14px 16px',
-            display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            boxShadow: '0 1px 4px rgba(44,26,14,0.08)',
-            border: CARD_BORDER,
-          }}>
-            {socialItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => window.open(item.href, '_blank')}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  background: '#F5F0EA',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 13, color: C.brown }}>
-                    {item.letter}
-                  </span>
-                </div>
-                <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 10, color: C.brownSoft }}>{item.label}</span>
-              </button>
-            ))}
-          </div>
+        {/* ── SOCIAL ROW ── */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 28, padding: '4px 0', marginTop: 14 }}>
+          {socialItems.map((item) => (
+            <button
+              key={item.key}
+              className="social-icon"
+              onClick={() => window.open(item.href, '_blank')}
+              style={{
+                width: 36, height: 36,
+                background: 'transparent',
+                border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                opacity: 0.5,
+                transition: 'opacity 0.15s',
+                padding: 0,
+              }}
+            >
+              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(44,26,14,0.1)' }} />
+            </button>
+          ))}
         </div>
 
         <div style={{ flex: 1 }} />
 
-        <div style={{ padding: '0 20px 8px' }}><StepDots step={1} /></div>
-
         {/* ── ORDER CTA ── */}
-        <div style={{ padding: '0 16px 8px' }}>
+        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center' }}>
           <a
             href="https://bestpartbowls.com"
             target="_blank"
             rel="noopener noreferrer"
+            className="cta-pill"
             style={{
-              display: 'block', width: '100%', padding: '11px 0',
-              borderRadius: 10, textAlign: 'center',
-              border: `1.5px solid ${C.orange}`, color: C.orange,
-              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14,
-              textDecoration: 'none', boxSizing: 'border-box',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 28px',
+              background: 'transparent',
+              border: '1.5px solid #E8622A',
+              borderRadius: 50,
+              color: '#E8622A',
+              fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 14,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s',
             }}
           >
-            🍚 ดูเมนูและสั่งอาหาร →
+            ดูเมนูและสั่งอาหาร →
           </a>
         </div>
 
         {/* ── SOCIAL PROOF ── */}
-        <div style={{ padding: '6px 16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        <div style={{ padding: '16px 16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
           <div style={{ display: 'flex' }}>
             {[C.orange, C.amber, '#D9482A', C.brownSoft].map((c, i) => (
               <div key={i} style={{
