@@ -178,7 +178,7 @@ export default function JoeMode() {
   useEffect(() => {
     supabase
       .from('cupid_joe_mode')
-      .select('id, title, icon, summary, story_text, status, status_note, inspired_by_nickname, timeline, display_order, image_url')
+      .select('*')
       .order('created_at', { ascending: true })
       .then(({ data }) => {
         if (data) setEntries(data as JoeEntry[])
