@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
 import GreetingScreen from './screens/GreetingScreen'
 import LandingScreen from './screens/LandingScreen'
 import HappyPath from './screens/HappyPath'
@@ -45,7 +45,8 @@ export default function App() {
         <Route path="/problem" element={<ProblemPath />} />
         <Route path="/thanks" element={<ThanksScreen />} />
         <Route path="/qa" element={<QASession />} />
-        <Route path="/joe-mode" element={<JoeMode />} />
+        <Route path="/meunfun" element={<JoeMode />} />
+        <Route path="/joe-mode" element={<Navigate to="/meunfun" replace />} />
         <Route path="/founder" element={<FounderVision />} />
         <Route element={<ReportAuth />}>
           <Route element={<ReportLayout />}>

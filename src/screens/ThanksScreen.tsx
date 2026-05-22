@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBow } from '../components/Illustrations'
-import { StatusBar, StepDots, C } from '../components/SharedUI'
+import { StepDots, C } from '../components/SharedUI'
 import SocialFooter from '../components/SocialFooter'
 import { supabase } from '../lib/supabase'
 
@@ -531,7 +531,6 @@ export default function ThanksScreen() {
   return (
     <MobileFrame>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <StatusBar />
         <div style={{ padding: '4px 18px 0' }}><StepDots step={3} /></div>
 
         {/* ── Hero ── */}
@@ -608,7 +607,7 @@ export default function ThanksScreen() {
                 </div>
               </div>
             </div>
-            <button onClick={() => navigate('/joe-mode')} style={{
+            <button onClick={() => navigate('/meunfun')} style={{
               marginTop: 10, background: 'transparent', border: 'none',
               color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0,
             }}>

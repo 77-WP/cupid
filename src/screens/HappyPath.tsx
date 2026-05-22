@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotJump, ConfettiBurst } from '../components/Illustrations'
-import { StatusBar, StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
+import { StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
 import { openFrameQuestions } from '../lib/openFrameQuestions'
 import { supabase } from '../lib/supabase'
 
@@ -194,7 +194,6 @@ export default function HappyPath() {
   return (
     <MobileFrame>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        <StatusBar />
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
           <BackBtn onClick={back} />
           <div style={{ flex: 1 }}><StepDots step={2} /></div>

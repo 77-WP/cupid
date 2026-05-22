@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { BossAvatar } from '../components/Illustrations'
-import { StatusBar, BackBtn, C, useCycle } from '../components/SharedUI'
+import { BackBtn, C, useCycle } from '../components/SharedUI'
 
 const answers = [
   { key: 'same',   label: 'เหมือนเดิม', icon: '✅' },
@@ -19,7 +19,6 @@ export default function QASession() {
   return (
     <MobileFrame>
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        <StatusBar />
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
           <BackBtn onClick={() => navigate('/thanks')} />
           <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600, flex: 1, textAlign: 'center' }}>WEEKLY · OPTIONAL</div>

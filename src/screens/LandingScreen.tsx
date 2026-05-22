@@ -146,7 +146,7 @@ export default function LandingScreen() {
 
           {/* Card — เหมือนฝัน */}
           <button
-            onClick={() => navigate('/joe-mode')}
+            onClick={() => navigate('/meunfun')}
             style={{
               background: '#FFFFFF',
               borderRadius: 16,

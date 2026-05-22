@@ -1,14 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { FounderPortrait } from '../components/Illustrations'
-import { StatusBar, BackBtn, C } from '../components/SharedUI'
+import { BackBtn, C } from '../components/SharedUI'
 
 export default function FounderVision() {
   const navigate = useNavigate()
   return (
     <MobileFrame>
       <div style={{ background: 'linear-gradient(180deg, #FAF3E8 0%, #F5E6CC 100%)', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <StatusBar />
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
           <BackBtn onClick={() => navigate('/landing')} />
           <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 11, color: C.brownSoft, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600, flex: 1, textAlign: 'center' }}>วิสัยทัศน์ของเรา</div>
