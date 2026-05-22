@@ -36,11 +36,11 @@ export default function GreetingScreen() {
           50%       { transform: translateY(-10px); }
         }
         @keyframes glowPulse {
-          0%, 100% { transform: scale(1);    opacity: 0.5; }
-          50%       { transform: scale(1.18); opacity: 0.9; }
+          0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.5; }
+          50%       { transform: translate(-50%, -50%) scale(1.18); opacity: 0.9; }
         }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(6px); }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
@@ -48,108 +48,118 @@ export default function GreetingScreen() {
       <div
         onClick={skip}
         style={{
-          width: '100%', minHeight: '100dvh',
-          background: '#FAF3E8',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          position: 'relative', cursor: 'pointer', overflow: 'hidden',
-          opacity: phase === 3 ? 0 : 1, transition: 'opacity .5s ease',
+          width: '100%',
+          minHeight: '100dvh',
+          backgroundColor: '#FAF3E8',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          cursor: 'pointer',
+          opacity: phase === 3 ? 0 : 1,
+          transition: 'opacity .5s ease',
         }}
       >
-        {/* Center content */}
+        {/* 1. Spacer top — slightly larger, pushes character to upper-center */}
+        <div style={{ flex: 1.2 }} />
+
+        {/* 2. Character block */}
         <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', position: 'relative', zIndex: 1,
-          padding: '0 32px',
+          position: 'relative',
+          width: 'fit-content',
+          margin: '0 auto',
+          opacity: phase >= 1 ? 1 : 0,
+          transform: phase >= 1 ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.92)',
+          transition: 'all .7s cubic-bezier(.2,.7,.3,1)',
         }}>
-
-          {/* Character with glow + float */}
+          {/* Glow circle behind character */}
           <div style={{
-            opacity: phase >= 1 ? 1 : 0,
-            transform: phase >= 1 ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.92)',
-            transition: 'all .7s cubic-bezier(.2,.7,.3,1)',
-            position: 'relative',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 8,
-          }}>
-            {/* Glow orb */}
-            <div style={{
-              position: 'absolute',
-              width: 220, height: 220, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(248,166,60,0.22) 0%, transparent 70%)',
-              animation: 'glowPulse 3s ease-in-out infinite',
-            }} />
-            {/* Floating character */}
-            <div style={{ animation: 'gentleFloat 3s ease-in-out infinite', position: 'relative' }}>
-              <MascotWai size={200} glow />
-            </div>
-          </div>
-
-          {/* Section A — Greeting */}
-          <div style={{
-            textAlign: 'center', marginBottom: 20,
-            opacity: phase >= 1 ? 1 : 0,
-            transition: 'opacity .5s ease',
-          }}>
-            <div style={{
-              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22,
-              color: '#2C1A0E', lineHeight: 1.3,
-            }}>
-              {main}
-            </div>
-            <div style={{
-              fontFamily: '"Sarabun", system-ui', fontSize: 16,
-              color: '#6B4C2A', marginTop: 4,
-            }}>
-              {sub}
-            </div>
-          </div>
-
-          {/* Section B — Cupid intro */}
-          <div style={{
-            textAlign: 'center',
-            animation: 'fadeIn 0.5s ease-out 0.6s both',
-          }}>
-            <div style={{
-              fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 15,
-              color: '#2C1A0E', lineHeight: 1.7,
-            }}>
-              Best Part เติบโตได้เพราะคุณครับ
-            </div>
-            <div style={{
-              fontFamily: '"Sarabun", system-ui', fontSize: 14,
-              color: '#6B4C2A', lineHeight: 1.7,
-            }}>
-              Cupid คือช่องทางที่เชื่อมเราเข้าหากัน
-            </div>
-            <div style={{
-              fontFamily: '"Sarabun", system-ui', fontSize: 14,
-              color: '#6B4C2A', lineHeight: 1.7,
-            }}>
-              บอกเราได้เลยว่าวันนี้เป็นยังไง 🙏
-            </div>
-          </div>
-
-          {/* Tap to skip */}
-          <div style={{
-            marginTop: 24,
-            fontFamily: '"DM Sans", system-ui', fontSize: 11,
-            color: '#6B4C2A', letterSpacing: 1, textTransform: 'uppercase',
-            opacity: phase >= 2 ? 0.6 : 0, transition: 'opacity .4s ease',
-          }}>
-            tap to skip
+            position: 'absolute',
+            width: 200, height: 200,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(248,166,60,0.22) 0%, transparent 70%)',
+            top: '50%', left: '50%',
+            animation: 'glowPulse 3s ease-in-out infinite',
+          }} />
+          {/* Floating character */}
+          <div style={{ animation: 'gentleFloat 3s ease-in-out infinite', position: 'relative', zIndex: 1 }}>
+            <MascotWai size={160} glow />
           </div>
         </div>
 
-        {/* Brand mark */}
+        {/* 3. Greeting block */}
         <div style={{
-          paddingBottom: 56,
-          display: 'flex', alignItems: 'center', gap: 8,
-          opacity: 0.45, position: 'relative', zIndex: 1,
+          marginTop: 28,
+          textAlign: 'center',
+          opacity: phase >= 1 ? 1 : 0,
+          transition: 'opacity .5s ease',
         }}>
-          <HeartLogo size={16} />
-          <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 11, letterSpacing: 2.4, color: C.brown }}>
-            BEST PART · CUPID
-          </span>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22,
+            color: '#2C1A0E', lineHeight: 1.3,
+          }}>
+            {main}
+          </div>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontSize: 16,
+            color: '#6B4C2A', marginTop: 4,
+          }}>
+            {sub}
+          </div>
+        </div>
+
+        {/* 4. Divider */}
+        <div style={{
+          width: 40, height: 2,
+          background: 'rgba(232,98,42,0.2)',
+          borderRadius: 2,
+          margin: '20px auto',
+        }} />
+
+        {/* 5. Cupid message block */}
+        <div style={{
+          textAlign: 'center',
+          padding: '0 32px',
+          animation: 'fadeUp 0.5s ease-out 0.5s both',
+        }}>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 15,
+            color: '#2C1A0E', marginBottom: 6,
+          }}>
+            Best Part เติบโตได้เพราะคุณครับ
+          </div>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontSize: 14,
+            color: '#6B4C2A', lineHeight: 1.7,
+          }}>
+            Cupid คือช่องทางที่เชื่อมเราเข้าหากัน
+          </div>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontSize: 14,
+            color: '#6B4C2A', lineHeight: 1.7,
+          }}>
+            บอกเราได้เลยว่าวันนี้เป็นยังไง 🙏
+          </div>
+        </div>
+
+        {/* 6. Spacer bottom */}
+        <div style={{ flex: 1 }} />
+
+        {/* 7. Footer block */}
+        <div style={{ paddingBottom: 24, textAlign: 'center' }}>
+          <div style={{
+            fontFamily: '"Sarabun", system-ui', fontSize: 11,
+            letterSpacing: '0.1em', color: 'rgba(44,26,14,0.3)',
+            textTransform: 'uppercase', marginBottom: 16,
+            opacity: phase >= 2 ? 1 : 0, transition: 'opacity .4s ease',
+          }}>
+            tap to skip
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.45 }}>
+            <HeartLogo size={16} />
+            <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 11, letterSpacing: 2.4, color: C.brown }}>
+              BEST PART · CUPID
+            </span>
+          </div>
         </div>
       </div>
     </MobileFrame>
