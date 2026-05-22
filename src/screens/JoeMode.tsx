@@ -25,9 +25,9 @@ interface JoeEntry {
 }
 
 const STATUS_CONFIG: Record<JoeEntry['status'], { bg: string; color: string; label: string }> = {
-  'done':        { bg: 'rgba(34,197,94,0.9)',    color: '#fff',    label: 'เสร็จแล้ว' },
-  'in-progress': { bg: 'rgba(245,166,35,0.9)',   color: '#2C1A0E', label: 'กำลังทำ' },
-  'response':    { bg: 'rgba(148,163,184,0.85)', color: '#fff',    label: 'รับทราบ' },
+  'done':        { bg: '#DCFCE7', color: '#15803D', label: '✅ เสร็จแล้ว' },
+  'in-progress': { bg: '#FEF3C7', color: '#B45309', label: '⏳ กำลังทำ' },
+  'response':    { bg: '#F1F5F9', color: '#64748B', label: '💬 รับทราบ' },
 }
 
 function StatusPill({ status }: { status: JoeEntry['status'] }) {
@@ -46,8 +46,12 @@ function StatusPill({ status }: { status: JoeEntry['status'] }) {
 function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void }) {
   const timeline = [...(entry.timeline || [])].reverse()
   return (
-    <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+    <div style={{
+      background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto',
+      animation: 'detailSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both',
+    }}>
       <style>{`
+        @keyframes detailSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes heroReveal { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes dotPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -136,7 +140,6 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {timeline.map((item, i) => (
                 <div key={i} style={{ display: 'flex', gap: 12 }}>
-                  {/* Left track */}
                   <div style={{ width: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{
                       width: 12, height: 12, borderRadius: 6, flexShrink: 0,
@@ -148,7 +151,6 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
                       <div style={{ width: 2, flex: 1, background: '#E8D5C0', minHeight: 20 }} />
                     )}
                   </div>
-                  {/* Right content */}
                   <div style={{ flex: 1, marginBottom: 20 }}>
                     <div style={{
                       fontFamily: '"Sarabun", system-ui', fontSize: 12,
@@ -169,11 +171,19 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
   )
 }
 
+const FILTERS = [
+  { label: 'ทั้งหมด',    value: 'all' },
+  { label: '⏳ กำลังทำ', value: 'in-progress' },
+  { label: '✅ เสร็จแล้ว', value: 'done' },
+  { label: '💬 รับทราบ', value: 'response' },
+]
+
 export default function JoeMode() {
   const navigate = useNavigate()
   const [entries, setEntries] = useState<JoeEntry[]>([])
   const [annOpen, setAnnOpen] = useState(false)
   const [articleId, setArticleId] = useState<string | null>(null)
+  const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
     supabase
@@ -190,18 +200,21 @@ export default function JoeMode() {
   if (article) {
     return (
       <MobileFrame>
-        <ArticleView entry={article} onBack={() => navigate('/meunfun')} />
+        <ArticleView entry={article} onBack={() => setArticleId(null)} />
       </MobileFrame>
     )
   }
+
+  const filteredEntries = filter === 'all' ? entries : entries.filter((e) => e.status === filter)
 
   return (
     <MobileFrame>
       <style>{`
         @keyframes cardFadeIn {
-          from { opacity: 0; transform: translateY(12px) scale(0.96); }
+          from { opacity: 0; transform: translateY(14px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .joe-filter-row::-webkit-scrollbar { display: none; }
       `}</style>
       <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
@@ -216,57 +229,104 @@ export default function JoeMode() {
         </div>
         <div style={{
           fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A',
-          opacity: 0.7, textAlign: 'center', marginTop: 4, marginBottom: 20,
+          opacity: 0.7, textAlign: 'center', marginTop: 4, marginBottom: 14,
         }}>เรื่องที่เราทำเพราะคุณ</div>
 
-        {/* 3-COLUMN GRID */}
+        {/* FILTER ROW */}
+        <div
+          className="joe-filter-row"
+          style={{
+            display: 'flex', gap: 8, padding: '0 16px', marginBottom: 16,
+            overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none',
+          }}
+        >
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              style={{
+                padding: '7px 14px', borderRadius: 20,
+                fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12,
+                cursor: 'pointer', whiteSpace: 'nowrap', border: 'none',
+                background: filter === f.value ? '#2C1A0E' : 'rgba(44,26,14,0.07)',
+                color: filter === f.value ? '#fff' : '#6B4C2A',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 2-COLUMN GRID */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 8, padding: '0 16px', flex: 1,
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12, padding: '0 16px', flex: 1,
         }}>
-          {entries.map((entry, i) => (
+          {filteredEntries.length === 0 && (
+            <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '40px 0', color: '#6B4C2A', opacity: 0.4 }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>✨</div>
+              <p style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, margin: 0 }}>ไม่มีรายการในหมวดนี้ครับ</p>
+            </div>
+          )}
+          {filteredEntries.map((entry, i) => (
             <div
               key={entry.id}
               onClick={() => setArticleId(entry.id)}
               style={{
-                position: 'relative', cursor: 'pointer',
-                borderRadius: 14, overflow: 'hidden',
-                aspectRatio: '1', background: '#F0EBE3',
-                animation: 'cardFadeIn 0.35s ease-out both',
-                animationDelay: `${i * 60}ms`,
+                background: '#FFFFFF', borderRadius: 18, padding: 14,
+                display: 'flex', flexDirection: 'column',
+                boxShadow: '0 1px 4px rgba(44,26,14,0.07), 0 4px 16px rgba(44,26,14,0.05)',
+                border: '1.5px solid rgba(44,26,14,0.06)',
+                cursor: 'pointer', minHeight: 170,
+                position: 'relative', overflow: 'hidden',
+                animation: 'cardFadeIn 0.4s ease-out both',
+                animationDelay: `${i * 80}ms`,
+                transition: 'transform 0.15s ease',
               }}
+              onMouseDown={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(0.97)' }}
+              onMouseUp={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)' }}
             >
-              {/* Image or placeholder */}
-              {entry.image_url
-                ? <img src={entry.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt={entry.title} />
-                : (
-                  <div style={{
-                    width: '100%', height: '100%', background: '#E8DDD4',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <span style={{ fontSize: 28, opacity: 0.6 }}>{entry.icon}</span>
-                  </div>
-                )
-              }
-
-              {/* Status badge */}
-              <div style={{ position: 'absolute', top: 7, left: 7 }}>
+              {/* A) TOP ROW — emoji + status pill */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <span style={{ fontSize: 32, lineHeight: 1 }}>{entry.icon}</span>
                 <StatusPill status={entry.status} />
               </div>
 
-              {/* Bottom gradient overlay */}
+              {/* B) TITLE */}
               <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                height: 52,
-                background: 'linear-gradient(to top, rgba(44,26,14,0.65), transparent)',
-                display: 'flex', alignItems: 'flex-end', padding: '7px 8px',
+                fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15,
+                color: '#2C1A0E', lineHeight: 1.3, marginBottom: 5,
               }}>
+                {entry.title}
+              </div>
+
+              {/* C) SUMMARY */}
+              <div style={{
+                fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#6B4C2A',
+                lineHeight: 1.55, marginBottom: 8,
+                overflow: 'hidden', display: '-webkit-box',
+                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              } as React.CSSProperties}>
+                {entry.summary}
+              </div>
+
+              {/* D) INSPIRED BY ROW */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 'auto' }}>
                 <div style={{
-                  fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11,
-                  color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap', width: '100%',
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 8, color: '#fff', flexShrink: 0,
                 }}>
-                  {entry.title}
+                  {entry.inspired_by_nickname.charAt(0)}
+                </div>
+                <div style={{
+                  fontFamily: '"Sarabun", system-ui', fontSize: 11,
+                  color: 'rgba(44,26,14,0.45)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120,
+                }}>
+                  โดย {entry.inspired_by_nickname}
                 </div>
               </div>
             </div>
