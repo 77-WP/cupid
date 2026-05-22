@@ -274,11 +274,11 @@ export default function JoeMode() {
               key={entry.id}
               onClick={() => setArticleId(entry.id)}
               style={{
-                background: '#FFFFFF', borderRadius: 18, padding: 14,
+                background: '#FFFFFF', borderRadius: 18, padding: '12px 12px 10px',
                 display: 'flex', flexDirection: 'column',
                 boxShadow: '0 1px 4px rgba(44,26,14,0.07), 0 4px 16px rgba(44,26,14,0.05)',
                 border: '1.5px solid rgba(44,26,14,0.06)',
-                cursor: 'pointer', minHeight: 170,
+                cursor: 'pointer',
                 position: 'relative', overflow: 'hidden',
                 animation: 'cardFadeIn 0.4s ease-out both',
                 animationDelay: `${i * 80}ms`,
@@ -304,8 +304,8 @@ export default function JoeMode() {
 
               {/* C) SUMMARY */}
               <div style={{
-                fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#6B4C2A',
-                lineHeight: 1.55, marginBottom: 8,
+                fontFamily: '"Sarabun", system-ui', fontSize: 11, color: '#6B4C2A',
+                lineHeight: 1.5, marginBottom: 8,
                 overflow: 'hidden', display: '-webkit-box',
                 WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
               } as React.CSSProperties}>
