@@ -49,7 +49,7 @@ const BEST_SELLER_CAT_ID = 'c492de49-8cf0-4e00-9602-cebeb3ce7921'
 
 function MenuVote({ categories }: { categories: Category[] }) {
   const [step, setStep] = useState<'category' | 'menu'>('category')
-  const [selectedCat, setSelectedCat] = useState<Category | null>(null)
+  const [_selectedCat, setSelectedCat] = useState<Category | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItemDB[]>([])
   const [loadingMenus, setLoadingMenus] = useState(false)
   const [tappedId, setTappedId] = useState<string | null>(null)   // brief scale-up
