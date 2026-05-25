@@ -9,9 +9,10 @@ const SOCIAL_LINKS = [
 
 interface SocialFooterProps {
   feedbackCount?: number | null
+  hideCTA?: boolean
 }
 
-export default function SocialFooter({ feedbackCount }: SocialFooterProps) {
+export default function SocialFooter({ feedbackCount, hideCTA }: SocialFooterProps) {
   return (
     <div style={{
       padding: '14px 16px 20px', display: 'flex', flexDirection: 'column',
@@ -41,21 +42,23 @@ export default function SocialFooter({ feedbackCount }: SocialFooterProps) {
       </div>
 
       {/* Row 2: Order CTA */}
-      <a
-        href="https://bestpartbowls.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'block', width: '100%', padding: '11px 0',
-          borderRadius: 10, textAlign: 'center',
-          border: `1.5px solid ${C.orange}`, color: C.orange,
-          fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14,
-          textDecoration: 'none', boxSizing: 'border-box',
-          transition: 'background .15s',
-        }}
-      >
-        🍜 ดูเมนูและสั่งอาหาร →
-      </a>
+      {!hideCTA && (
+        <a
+          href="https://bestpartbowls.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block', width: '100%', padding: '11px 0',
+            borderRadius: 10, textAlign: 'center',
+            border: `1.5px solid ${C.orange}`, color: C.orange,
+            fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14,
+            textDecoration: 'none', boxSizing: 'border-box',
+            transition: 'background .15s',
+          }}
+        >
+          🍜 ดูเมนูและสั่งอาหาร →
+        </a>
+      )}
 
       {/* Row 3: Feedback count */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

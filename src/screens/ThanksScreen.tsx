@@ -802,7 +802,7 @@ export default function ThanksScreen() {
           </button>
 
           <div style={{ marginTop: 10, textAlign: 'center' }}>
-            <SocialFooter feedbackCount={feedbackCount} />
+            <SocialFooter feedbackCount={feedbackCount} hideCTA />
           </div>
 
           <div style={{ marginTop: 8, textAlign: 'center' }}>
