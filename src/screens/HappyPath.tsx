@@ -36,6 +36,8 @@ export default function HappyPath() {
   const [hintIndex, setHintIndex] = useState(0)
   const [chipAnimation, setChipAnimation] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [joeItems, setJoeItems] = useState<any[]>([])
+  const [marqueePaused, setMarqueePaused] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,6 +45,19 @@ export default function HappyPath() {
     }, 2500)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (step !== 'loop') return
+    const fetchJoe = async () => {
+      const { data } = await supabase
+        .from('cupid_joe_mode')
+        .select('id, title, icon, status, summary')
+        .order('created_at', { ascending: false })
+        .limit(8)
+      if (data) setJoeItems(data)
+    }
+    fetchJoe()
+  }, [step])
 
   const fetchProofCard = async (chips: string[]) => {
     const categories = chips
@@ -146,12 +161,17 @@ export default function HappyPath() {
   return (
     <MobileFrame>
       <style>{`
-        @keyframes chipBounce {
-          0% { transform: scale(1); }
-          30% { transform: scale(0.88); }
-          60% { transform: scale(1.1); }
-          80% { transform: scale(0.97); }
+        @keyframes jellyPop {
+          0%   { transform: scale(1); }
+          20%  { transform: scaleX(0.82) scaleY(1.18); }
+          40%  { transform: scaleX(1.14) scaleY(0.88); }
+          60%  { transform: scaleX(0.94) scaleY(1.06); }
+          80%  { transform: scaleX(1.04) scaleY(0.97); }
           100% { transform: scale(1); }
+        }
+        @keyframes marqueeScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         @keyframes chipFlyUp {
           0% { transform: scale(1) translateY(0); opacity: 1; }
@@ -253,7 +273,7 @@ export default function HappyPath() {
                       animation: flying
                         ? `chipFlyUp 0.4s ease-in both`
                         : bouncing
-                        ? 'chipBounce 0.35s ease-out'
+                        ? 'jellyPop 0.35s ease-out'
                         : 'none',
                       animationDelay: flying ? flyDelay : '0ms',
                     }}
@@ -363,6 +383,79 @@ export default function HappyPath() {
             <div style={{ textAlign: 'center', marginTop: 8, padding: '0 24px', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#6B4C2A', lineHeight: 1.7 }}>
               feedback ของคุณส่งถึงทีมงาน Best Part โดยตรงเลยครับ
             </div>
+
+            {/* Marquee — เรื่องที่เราทำเพราะคุณ */}
+            {joeItems.length > 0 && (() => {
+              const marqueeItems = [...joeItems, ...joeItems]
+              return (
+                <div>
+                  <div style={{ marginTop: 20, paddingLeft: 20, marginBottom: 10, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#E8622A', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    เรื่องที่เราทำเพราะคุณ
+                  </div>
+                  <div style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 32, zIndex: 2, background: 'linear-gradient(to right, #FAF3E8, transparent)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 32, zIndex: 2, background: 'linear-gradient(to left, #FAF3E8, transparent)', pointerEvents: 'none' }} />
+                    <div
+                      onMouseEnter={() => setMarqueePaused(true)}
+                      onMouseLeave={() => setMarqueePaused(false)}
+                      style={{
+                        display: 'flex',
+                        gap: 10,
+                        width: 'fit-content',
+                        paddingLeft: 16,
+                        animation: 'marqueeScroll 18s linear infinite',
+                        animationPlayState: marqueePaused ? 'paused' : 'running',
+                      }}
+                    >
+                      {marqueeItems.map((item: any, idx: number) => {
+                        const statusColor = item.status === 'done' ? '#22C55E' : item.status === 'in-progress' ? '#F5A623' : '#94A3B8'
+                        const statusTextColor = item.status === 'done' ? '#15803D' : item.status === 'in-progress' ? '#B45309' : '#64748B'
+                        const statusLabel = item.status === 'done' ? 'เสร็จแล้ว' : item.status === 'in-progress' ? 'กำลังทำ' : 'รับทราบ'
+                        return (
+                          <div
+                            key={`${item.id}-${idx}`}
+                            onClick={() => navigate('/meunfun')}
+                            style={{
+                              flexShrink: 0,
+                              width: 130,
+                              background: 'white',
+                              borderRadius: 14,
+                              padding: 12,
+                              border: '1.5px solid rgba(44,26,14,0.06)',
+                              boxShadow: '0 2px 8px rgba(44,26,14,0.06)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
+                              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 9, color: statusTextColor }}>
+                                {statusLabel}
+                              </div>
+                            </div>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 10,
+                              background: 'rgba(232,98,42,0.08)',
+                              border: '1.5px dashed rgba(232,98,42,0.2)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 9, color: 'rgba(232,98,42,0.3)', fontFamily: '"DM Sans", system-ui',
+                              marginBottom: 8,
+                            }}>
+                              img
+                            </div>
+                            <div style={{
+                              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#2C1A0E', lineHeight: 1.3,
+                              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                            }}>
+                              {item.title}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* D) Proof Card */}
             {proofCard !== null && (
