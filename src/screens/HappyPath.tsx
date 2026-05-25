@@ -1,211 +1,378 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotJump, ConfettiBurst } from '../components/Illustrations'
-import { StepDots, BackBtn, C, useCycle } from '../components/SharedUI'
-import { openFrameQuestions } from '../lib/openFrameQuestions'
+import { MascotJump } from '../components/Illustrations'
+import { BackBtn, C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
 
-const HINT_TAGS = ['รู้สึกว่า...', 'ชอบมากที่...', 'อยากให้มี...', 'ขอให้...']
-
-function Step1({ onSubmit, onSkip }: { onSubmit: (text: string) => void; onSkip: () => void }) {
-  const [text, setText] = useState('')
-  const hint = useCycle(openFrameQuestions.happy, 3000)
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <ConfettiBurst />
-
-      {/* Mascot + heading */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 28px 0', position: 'relative', zIndex: 1 }}>
-        <div className="jump-anim"><MascotJump size={130} /></div>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 23, color: C.brown, marginTop: 8, textAlign: 'center', lineHeight: 1.3 }}>
-          ดีใจมากเลยครับ! <span style={{ color: C.orange }}>❤️</span>
-        </div>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brownSoft, marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
-          มีอะไรอยากบอกหรือฝากถึงทีมงานบ้างครับ?
-        </div>
-      </div>
-
-      {/* Textarea */}
-      <div style={{ padding: '14px 16px 0', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={hint}
-          style={{
-            width: '100%', minHeight: 120, padding: '14px 16px',
-            borderRadius: 20, border: 'none',
-            background: 'rgba(255,255,255,0.8)',
-            boxShadow: '0 2px 16px rgba(44,26,14,0.07)',
-            resize: 'none', boxSizing: 'border-box',
-            fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brown,
-            outline: 'none', lineHeight: 1.65, caretColor: C.orange,
-          }}
-        />
-
-        {/* Hint tags */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          {HINT_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setText((s) => s ? s : tag)}
-              style={{
-                padding: '6px 13px', borderRadius: 999,
-                background: 'transparent', border: `1.5px solid ${C.orange}`,
-                color: C.orange, fontFamily: '"Sarabun", system-ui',
-                fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ flex: 1 }} />
-
-        <div style={{ padding: '8px 0 8px' }}>
-          <button
-            onClick={() => onSubmit(text)}
-            style={{
-              width: '100%', height: 56, borderRadius: 28, border: 'none',
-              background: C.orange, color: '#fff',
-              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: '0 8px 20px rgba(232,98,42,0.32)',
-            }}
-          >
-            ส่งให้ทีมงาน
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9h12M10 4l5 5-5 5"/>
-            </svg>
-          </button>
-          <div style={{ textAlign: 'right', marginTop: 8, paddingBottom: 12 }}>
-            <button
-              onClick={onSkip}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}
-            >
-              ข้ามครับ →
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Step2({ done }: { done: () => void }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleShare = () => {
-    const url = window.location.origin
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 3000)
-    })
-  }
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <div style={{ fontSize: 64, marginBottom: 12 }}>🙏</div>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: C.brown, lineHeight: 1.45 }}>
-          ช่วยบอกต่อให้คนที่คุณรักด้วยได้ไหมครับ?
-        </div>
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft, marginTop: 10, lineHeight: 1.6 }}>
-          ไม่บังคับนะครับ<br/>แค่อยากให้คนดีๆ ได้รู้จัก Best Part
-        </div>
-        <button
-          onClick={handleShare}
-          style={{
-            marginTop: 24, padding: '12px 24px', borderRadius: 999,
-            background: copied ? 'rgba(63,142,92,0.12)' : 'transparent',
-            border: `1.5px solid ${copied ? '#3F8E5C' : C.orange}`,
-            color: copied ? '#3F8E5C' : C.orange,
-            fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 14,
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
-            transition: 'all .2s ease',
-          }}
-        >
-          {copied ? (
-            <>✓ คัดลอกแล้วครับ</>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={C.orange} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="4" cy="8" r="2"/><circle cx="12" cy="3" r="2"/><circle cx="12" cy="13" r="2"/>
-                <path d="M6 7l4 -3M6 9l4 3"/>
-              </svg>
-              คัดลอก link ให้เพื่อน
-            </>
-          )}
-        </button>
-      </div>
-      <div style={{ padding: '0 16px 22px' }}>
-        <button
-          onClick={done}
-          style={{ width: '100%', height: 52, borderRadius: 26, border: 'none', background: C.brown, color: C.cream, fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
-        >
-          ข้ามครับ
-        </button>
-      </div>
-    </div>
-  )
-}
+const DELIGHT_CHIPS = [
+  { id: 'tasty',     label: 'อร่อยมาก',      emoji: '😋', category: 'food' },
+  { id: 'pretty',    label: 'หน้าตาสวย',     emoji: '🎨', category: 'food' },
+  { id: 'fast',      label: 'ส่งเร็ว',        emoji: '⚡', category: 'service' },
+  { id: 'complete',  label: 'แพ็คมาครบ',     emoji: '📦', category: 'packaging' },
+  { id: 'value',     label: 'คุ้มค่า',        emoji: '💚', category: 'food' },
+  { id: 'portion',   label: 'ปริมาณพอดี',    emoji: '🍱', category: 'food' },
+  { id: 'service',   label: 'บริการดี',       emoji: '🤝', category: 'service' },
+  { id: 'repeat',    label: 'อยากสั่งซ้ำ',   emoji: '🔁', category: 'food' },
+  { id: 'recommend', label: 'แนะนำได้เลย',   emoji: '📣', category: 'service' },
+]
 
 export default function HappyPath() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState<'delight' | 'loop'>('delight')
+  const [selectedChips, setSelectedChips] = useState<string[]>([])
+  const [freeText, setFreeText] = useState('')
+  const [proofCard, setProofCard] = useState<any>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const back = () => step === 0 ? navigate('/landing') : setStep(0)
+  const fetchProofCard = async (chips: string[]) => {
+    const categories = chips
+      .map(id => DELIGHT_CHIPS.find(c => c.id === id)?.category)
+      .filter(Boolean)
 
-  const handleSubmit = async (text: string) => {
-    console.log('Submit button clicked')
+    const categoryCount: Record<string, number> = {}
+    categories.forEach(cat => {
+      if (cat) categoryCount[cat] = (categoryCount[cat] || 0) + 1
+    })
+
+    const dominantCategory = Object.entries(categoryCount)
+      .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+    const { data, error } = await supabase
+      .from('cupid_joe_mode')
+      .select('*')
+      .eq('status', 'done')
+
+    if (error || !data || data.length === 0) return
+
+    const categoryKeywords: Record<string, string[]> = {
+      food: ['อาหาร', 'เมนู', 'รสชาติ', 'หมู', 'ไก่', 'ข้าว', 'กรอบ', 'ทองคำ'],
+      service: ['บริการ', 'เสิร์ฟ', 'ส่ง', 'รถ', 'ทีมงาน'],
+      packaging: ['กล่อง', 'บรรจุ', 'eco', 'แพ็ค'],
+    }
+
+    const keywords = dominantCategory ? categoryKeywords[dominantCategory] || [] : []
+
+    const matched = data.filter(item =>
+      keywords.some(kw =>
+        item.title?.toLowerCase().includes(kw.toLowerCase()) ||
+        item.summary?.toLowerCase().includes(kw.toLowerCase())
+      )
+    )
+
+    const pool = matched.length > 0 ? matched : data
+    const random = pool[Math.floor(Math.random() * pool.length)]
+    setProofCard(random)
+  }
+
+  const toggleChip = (id: string) => {
+    setSelectedChips(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    )
+  }
+
+  const handleSubmit = async () => {
+    if (selectedChips.length === 0 || isSubmitting) return
+    setIsSubmitting(true)
+
     const insertPayload = {
       mood: 'love',
       source: sessionStorage.getItem('cupid_source') || 'unknown',
-      text: text.trim() || null,
+      text: JSON.stringify({ chips: selectedChips, message: freeText }),
       category: 'open',
     }
-    console.log('=== HAPPY PATH SUBMIT ===', insertPayload)
+
     const { data: insertData, error: insertError } = await supabase
       .from('cupid_feedback')
       .insert(insertPayload)
       .select('id')
       .single()
-    console.log('Insert result:', insertData, 'Error:', insertError)
-    if (insertError) console.error('INSERT FAILED:', insertError.message, insertError.details, insertError.hint)
+
+    if (insertError) console.error('INSERT FAILED:', insertError.message)
     if (insertData?.id) {
       sessionStorage.setItem('last_feedback_id', insertData.id)
-      console.log('Saved feedback ID:', insertData.id)
     }
-    setStep(1)
-  }
 
-  const handleSkip = async () => {
-    console.log('=== HAPPY PATH SKIP ===')
-    const { error } = await supabase.from('cupid_feedback').insert({
-      mood: 'love',
-      source: sessionStorage.getItem('cupid_source') || 'unknown',
-    })
-    if (error) console.error('SKIP INSERT FAILED:', error.message)
-    setStep(1)
+    await fetchProofCard(selectedChips)
+
+    setIsSubmitting(false)
+    setStep('loop')
   }
 
   return (
     <MobileFrame>
+      <style>{`
+        @keyframes chipBounce {
+          0% { transform: scale(1); }
+          40% { transform: scale(0.92); }
+          70% { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        @keyframes floatChar {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseBtn {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(232,98,42,0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(232,98,42,0); }
+        }
+      `}</style>
+
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
-          <BackBtn onClick={back} />
-          <div style={{ flex: 1 }}><StepDots step={2} /></div>
-          <div style={{ width: 36 }} />
+          <BackBtn onClick={() => step === 'delight' ? navigate('/landing') : setStep('delight')} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, padding: '8px 0 0' }}>
-          {[0, 1].map((i) => (
-            <div key={i} style={{ width: 16, height: 3, borderRadius: 2, background: i <= step ? C.orange : 'rgba(44,26,14,0.12)' }} />
-          ))}
-        </div>
-        {step === 0 && <Step1 onSubmit={handleSubmit} onSkip={handleSkip} />}
-        {step === 1 && <Step2 done={() => navigate('/thanks')} />}
+
+        {step === 'delight' && (
+          <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            {/* A) Character */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+              <div style={{ animation: 'floatChar 3s ease-in-out infinite' }}>
+                <MascotJump size={100} />
+              </div>
+            </div>
+
+            {/* B) Heading */}
+            <div style={{ textAlign: 'center', marginTop: 20, padding: '0 20px' }}>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: C.brown }}>
+                อะไรที่ชอบมากวันนี้ครับ?
+              </div>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A', opacity: 0.65, marginTop: 4 }}>
+                tap ได้มากกว่า 1 อย่างเลยครับ
+              </div>
+            </div>
+
+            {/* C) Chips */}
+            <div style={{ marginTop: 20, padding: '0 20px', display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+              {DELIGHT_CHIPS.map(chip => {
+                const selected = selectedChips.includes(chip.id)
+                return (
+                  <div
+                    key={chip.id}
+                    onClick={() => toggleChip(chip.id)}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 50,
+                      background: selected ? '#E8622A' : 'transparent',
+                      border: selected ? '1.5px solid #E8622A' : '1.5px dashed rgba(44,26,14,0.2)',
+                      color: selected ? 'white' : '#2C1A0E',
+                      fontFamily: '"Sarabun", system-ui',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      transition: 'all 0.2s ease',
+                      animation: selected ? 'chipBounce 0.3s ease-out' : undefined,
+                    }}
+                  >
+                    <span>{chip.emoji}</span>
+                    <span>{chip.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* D) Optional text */}
+            <div style={{ marginTop: 20, padding: '0 20px' }}>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A' }}>
+                อยากบอกอะไรเพิ่มไหมครับ?
+              </div>
+              <textarea
+                value={freeText}
+                onChange={e => setFreeText(e.target.value)}
+                placeholder="เช่น เมนูที่ชอบ หรืออยากให้มีอะไรเพิ่ม..."
+                onFocus={e => { e.currentTarget.style.borderColor = '#E8622A' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(44,26,14,0.1)' }}
+                style={{
+                  width: '100%',
+                  marginTop: 8,
+                  padding: '12px 14px',
+                  borderRadius: 14,
+                  border: '1.5px solid rgba(44,26,14,0.1)',
+                  background: 'white',
+                  fontFamily: '"Sarabun", system-ui',
+                  fontSize: 14,
+                  color: '#2C1A0E',
+                  minHeight: 80,
+                  resize: 'none',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* E) CTA Button */}
+            <div style={{ marginTop: 20, padding: '0 20px 32px' }}>
+              {selectedChips.length === 0 ? (
+                <button
+                  disabled
+                  style={{
+                    width: '100%',
+                    padding: 16,
+                    borderRadius: 50,
+                    background: 'rgba(44,26,14,0.08)',
+                    color: 'rgba(44,26,14,0.3)',
+                    fontFamily: '"Sarabun", system-ui',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    border: 'none',
+                    cursor: 'not-allowed',
+                  }}
+                >
+                  เลือกสิ่งที่ชอบก่อนนะครับ
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  style={{
+                    width: '100%',
+                    padding: 16,
+                    borderRadius: 50,
+                    background: '#E8622A',
+                    color: 'white',
+                    fontFamily: '"Sarabun", system-ui',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    border: 'none',
+                    cursor: isSubmitting ? 'default' : 'pointer',
+                    animation: isSubmitting ? undefined : 'pulseBtn 1.5s ease-in-out infinite',
+                  }}
+                >
+                  {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงาน →'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step === 'loop' && (
+          <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', animation: 'fadeSlideUp 0.4s ease-out' }}>
+            {/* A) Character with sparkles */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ animation: 'floatChar 3s ease-in-out infinite' }}>
+                  <MascotJump size={100} />
+                </div>
+                <span style={{ position: 'absolute', top: -8, left: 20, fontSize: 16, animation: 'fadeSlideUp 0.4s ease-out 0.1s both' }}>✨</span>
+                <span style={{ position: 'absolute', top: -8, right: 20, fontSize: 14, animation: 'fadeSlideUp 0.4s ease-out 0.2s both' }}>✨</span>
+                <span style={{ position: 'absolute', bottom: 0, right: 10, fontSize: 12, animation: 'fadeSlideUp 0.4s ease-out 0.3s both' }}>✨</span>
+              </div>
+            </div>
+
+            {/* B) Heading */}
+            <div style={{ textAlign: 'center', marginTop: 16, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: '#2C1A0E' }}>
+              ได้ยินแล้วครับ 🙏
+            </div>
+
+            {/* C) Body */}
+            <div style={{ textAlign: 'center', marginTop: 8, padding: '0 24px', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#6B4C2A', lineHeight: 1.7 }}>
+              feedback ของคุณส่งถึงทีมงาน Best Part โดยตรงเลยครับ
+            </div>
+
+            {/* D) Proof Card */}
+            {proofCard !== null && (
+              <div
+                style={{
+                  marginTop: 20,
+                  padding: '0 20px',
+                  animation: 'fadeSlideUp 0.5s ease-out 0.3s both',
+                }}
+              >
+                <div
+                  style={{
+                    background: 'white',
+                    borderRadius: 20,
+                    padding: 16,
+                    border: '1.5px solid rgba(232,98,42,0.15)',
+                    boxShadow: '0 4px 20px rgba(232,98,42,0.1)',
+                  }}
+                >
+                  {/* Top label */}
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#E8622A', letterSpacing: '0.05em', marginBottom: 12 }}>
+                    ✨ เพราะเสียงจากลูกค้าอย่างคุณ
+                  </div>
+
+                  {/* Content row */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div
+                      style={{
+                        width: 48, height: 48, borderRadius: 12,
+                        background: '#FFF3EC',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 24, flexShrink: 0,
+                      }}
+                    >
+                      {proofCard.icon}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E' }}>
+                        {proofCard.title}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#6B4C2A',
+                          lineHeight: 1.55, marginTop: 4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {proofCard.summary}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mini timeline */}
+                  <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8DDD4', flexShrink: 0 }} />
+                    <div style={{ flex: 1, height: 2, background: 'linear-gradient(to right, #E8DDD4, #E8622A)' }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8622A', flexShrink: 0 }} />
+                    <span style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#15803D', marginLeft: 4 }}>
+                      ✅ ทำแล้วครับ
+                    </span>
+                  </div>
+
+                  {/* Card link */}
+                  <div
+                    onClick={() => navigate('/meunfun')}
+                    style={{ marginTop: 12, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#E8622A', cursor: 'pointer' }}
+                  >
+                    ดูเรื่องราวอื่นๆ →
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* E) CTA Button */}
+            <div style={{ marginTop: 20, padding: '0 20px 40px' }}>
+              <button
+                onClick={() => navigate('/platform-select')}
+                style={{
+                  width: '100%',
+                  padding: 16,
+                  borderRadius: 50,
+                  background: '#E8622A',
+                  color: 'white',
+                  fontFamily: '"Sarabun", system-ui',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                รับทราบครับ →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </MobileFrame>
   )
