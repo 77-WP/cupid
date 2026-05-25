@@ -28,16 +28,12 @@ const ROTATING_HINTS = [
 
 export default function HappyPath() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<'delight' | 'loop'>('delight')
   const [selectedChips, setSelectedChips] = useState<string[]>([])
   const [freeText, setFreeText] = useState('')
-  const [proofCard, setProofCard] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hintIndex, setHintIndex] = useState(0)
   const [chipAnimation, setChipAnimation] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [joeItems, setJoeItems] = useState<any[]>([])
-  const [marqueePaused, setMarqueePaused] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,59 +41,6 @@ export default function HappyPath() {
     }, 2500)
     return () => clearInterval(interval)
   }, [])
-
-  useEffect(() => {
-    if (step !== 'loop') return
-    const fetchJoe = async () => {
-      const { data } = await supabase
-        .from('cupid_joe_mode')
-        .select('id, title, icon, status, summary')
-        .order('created_at', { ascending: false })
-        .limit(8)
-      if (data) setJoeItems(data)
-    }
-    fetchJoe()
-  }, [step])
-
-  const fetchProofCard = async (chips: string[]) => {
-    const categories = chips
-      .map(id => DELIGHT_CHIPS.find(c => c.id === id)?.category)
-      .filter(Boolean)
-
-    const categoryCount: Record<string, number> = {}
-    categories.forEach(cat => {
-      if (cat) categoryCount[cat] = (categoryCount[cat] || 0) + 1
-    })
-
-    const dominantCategory = Object.entries(categoryCount)
-      .sort((a, b) => b[1] - a[1])[0]?.[0]
-
-    const { data, error } = await supabase
-      .from('cupid_joe_mode')
-      .select('*')
-      .eq('status', 'done')
-
-    if (error || !data || data.length === 0) return
-
-    const categoryKeywords: Record<string, string[]> = {
-      food: ['อาหาร', 'เมนู', 'รสชาติ', 'หมู', 'ไก่', 'ข้าว', 'กรอบ', 'ทองคำ'],
-      service: ['บริการ', 'เสิร์ฟ', 'ส่ง', 'รถ', 'ทีมงาน'],
-      packaging: ['กล่อง', 'บรรจุ', 'eco', 'แพ็ค'],
-    }
-
-    const keywords = dominantCategory ? categoryKeywords[dominantCategory] || [] : []
-
-    const matched = data.filter(item =>
-      keywords.some(kw =>
-        item.title?.toLowerCase().includes(kw.toLowerCase()) ||
-        item.summary?.toLowerCase().includes(kw.toLowerCase())
-      )
-    )
-
-    const pool = matched.length > 0 ? matched : data
-    const random = pool[Math.floor(Math.random() * pool.length)]
-    setProofCard(random)
-  }
 
   const toggleChip = (id: string) => {
     const isAdding = !selectedChips.includes(id)
@@ -135,11 +78,9 @@ export default function HappyPath() {
       sessionStorage.setItem('last_feedback_id', insertData.id)
     }
 
-    await fetchProofCard(selectedChips)
-
     setIsSubmitting(false)
     setIsTransitioning(false)
-    setStep('loop')
+    navigate('/thanks')
   }
 
   const charAnim =
@@ -148,15 +89,6 @@ export default function HappyPath() {
       : selectedChips.length >= 1
       ? 'floatChar 2s ease-in-out infinite'
       : 'floatChar 3s ease-in-out infinite'
-
-  let timelineItems: any[] = []
-  try {
-    if (proofCard && Array.isArray(proofCard.timeline) && proofCard.timeline.length > 0) {
-      timelineItems = proofCard.timeline.slice(-2)
-    }
-  } catch {
-    timelineItems = []
-  }
 
   return (
     <MobileFrame>
@@ -169,10 +101,6 @@ export default function HappyPath() {
           80%  { transform: scaleX(1.04) scaleY(0.97); }
           100% { transform: scale(1); }
         }
-        @keyframes marqueeScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
         @keyframes chipFlyUp {
           0% { transform: scale(1) translateY(0); opacity: 1; }
           100% { transform: scale(0.3) translateY(-60px); opacity: 0; }
@@ -181,20 +109,6 @@ export default function HappyPath() {
           0%, 100% { transform: translateY(0) rotate(0deg); }
           25% { transform: translateY(-12px) rotate(-3deg); }
           75% { transform: translateY(-8px) rotate(3deg); }
-        }
-        @keyframes hintFade {
-          0% { opacity: 0; transform: translateY(4px); }
-          15% { opacity: 1; transform: translateY(0); }
-          85% { opacity: 1; transform: translateY(0); }
-          100% { opacity: 0; transform: translateY(-4px); }
-        }
-        @keyframes sparkleFloat {
-          0%, 100% { transform: scale(1) translateY(0); opacity: 0.8; }
-          50% { transform: scale(1.2) translateY(-4px); opacity: 1; }
-        }
-        @keyframes proofReveal {
-          from { opacity: 0; transform: translateY(20px) scale(0.97); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes floatChar {
           0%, 100% { transform: translateY(0px); }
@@ -212,351 +126,132 @@ export default function HappyPath() {
 
       <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 18px 0', gap: 8 }}>
-          <BackBtn onClick={() => step === 'delight' ? navigate('/landing') : setStep('delight')} />
+          <BackBtn onClick={() => navigate('/landing')} />
         </div>
 
-        {step === 'delight' && (
-          <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            {/* A) Character */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-              <div style={{ animation: charAnim }}>
-                <MascotJump size={100} />
-              </div>
-            </div>
-
-            {/* B) Heading */}
-            <div style={{ textAlign: 'center', marginTop: 20, padding: '0 20px' }}>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: C.brown }}>
-                อะไรที่ชอบมากวันนี้ครับ?
-              </div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A', opacity: 0.65, marginTop: 4 }}>
-                tap ได้มากกว่า 1 อย่างเลยครับ
-              </div>
-              {selectedChips.length > 0 && (
-                <div style={{
-                  marginTop: 6,
-                  fontSize: 12,
-                  fontFamily: '"Sarabun", system-ui',
-                  color: '#E8622A',
-                  fontWeight: 600,
-                  animation: 'fadeSlideUp 0.2s ease-out',
-                }}>
-                  เลือกไปแล้ว {selectedChips.length} อย่างครับ{selectedChips.length >= 3 ? ' ✨' : ''}
-                </div>
-              )}
-            </div>
-
-            {/* C) Chips */}
-            <div style={{ marginTop: 20, padding: '0 20px', display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
-              {DELIGHT_CHIPS.map(chip => {
-                const selected = selectedChips.includes(chip.id)
-                const flying = isTransitioning && selected
-                const bouncing = chipAnimation === chip.id
-                const flyDelay = isTransitioning ? selectedChips.indexOf(chip.id) * 40 + 'ms' : '0ms'
-                return (
-                  <div
-                    key={chip.id}
-                    onClick={() => toggleChip(chip.id)}
-                    style={{
-                      padding: '10px 18px',
-                      borderRadius: 50,
-                      background: selected ? '#E8622A' : 'transparent',
-                      border: selected ? '1.5px solid #E8622A' : '1.5px dashed rgba(44,26,14,0.2)',
-                      color: selected ? 'white' : '#2C1A0E',
-                      fontFamily: '"Sarabun", system-ui',
-                      fontWeight: 700,
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'all 0.2s ease',
-                      animation: flying
-                        ? `chipFlyUp 0.4s ease-in both`
-                        : bouncing
-                        ? 'jellyPop 0.35s ease-out'
-                        : 'none',
-                      animationDelay: flying ? flyDelay : '0ms',
-                    }}
-                  >
-                    {chip.label}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* D) Optional text */}
-            <div style={{ marginTop: 20, padding: '0 20px' }}>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A' }}>
-                อยากบอกอะไรเพิ่มไหมครับ?
-              </div>
-              <textarea
-                key={hintIndex}
-                value={freeText}
-                onChange={e => setFreeText(e.target.value)}
-                placeholder={ROTATING_HINTS[hintIndex]}
-                onFocus={e => { e.currentTarget.style.borderColor = '#E8622A' }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(44,26,14,0.1)' }}
-                style={{
-                  width: '100%',
-                  marginTop: 8,
-                  padding: '12px 14px',
-                  borderRadius: 14,
-                  border: '1.5px solid rgba(44,26,14,0.1)',
-                  background: 'white',
-                  fontFamily: '"Sarabun", system-ui',
-                  fontSize: 14,
-                  color: '#2C1A0E',
-                  minHeight: 80,
-                  resize: 'none',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'all 0.3s ease',
-                }}
-              />
-            </div>
-
-            {/* E) CTA Button */}
-            <div style={{ marginTop: 20, padding: '0 20px 32px' }}>
-              {selectedChips.length === 0 ? (
-                <button
-                  disabled
-                  style={{
-                    width: '100%',
-                    padding: 16,
-                    borderRadius: 50,
-                    background: 'rgba(44,26,14,0.08)',
-                    color: 'rgba(44,26,14,0.3)',
-                    fontFamily: '"Sarabun", system-ui',
-                    fontWeight: 700,
-                    fontSize: 16,
-                    border: 'none',
-                    cursor: 'not-allowed',
-                  }}
-                >
-                  เลือกสิ่งที่ชอบก่อนนะครับ
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  style={{
-                    width: '100%',
-                    padding: 16,
-                    borderRadius: 50,
-                    background: '#E8622A',
-                    color: 'white',
-                    fontFamily: '"Sarabun", system-ui',
-                    fontWeight: 700,
-                    fontSize: 16,
-                    border: 'none',
-                    cursor: isSubmitting ? 'default' : 'pointer',
-                    animation: isSubmitting ? undefined : 'pulseBtn 1.5s ease-in-out infinite',
-                  }}
-                >
-                  {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงาน →'}
-                </button>
-              )}
+        <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          {/* A) Character */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+            <div style={{ animation: charAnim }}>
+              <MascotJump size={100} />
             </div>
           </div>
-        )}
 
-        {step === 'loop' && (
-          <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', animation: 'fadeSlideUp 0.4s ease-out' }}>
-            {/* A) Character with sparkles */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <div style={{ animation: 'characterCelebrate 0.8s ease-out, floatChar 3s ease-in-out 0.8s infinite' }}>
-                  <MascotJump size={100} />
-                </div>
-                <span style={{ position: 'absolute', top: -8, left: 20, fontSize: 16, animation: 'sparkleFloat 2s ease-in-out infinite' }}>✨</span>
-                <span style={{ position: 'absolute', top: -8, right: 20, fontSize: 14, animation: 'sparkleFloat 2.4s ease-in-out 0.3s infinite' }}>✨</span>
-                <span style={{ position: 'absolute', bottom: 0, right: 10, fontSize: 12, animation: 'sparkleFloat 1.8s ease-in-out 0.6s infinite' }}>✨</span>
-              </div>
+          {/* B) Heading */}
+          <div style={{ textAlign: 'center', marginTop: 20, padding: '0 20px' }}>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: C.brown }}>
+              อะไรที่ชอบมากวันนี้ครับ?
             </div>
-
-            {/* B) Heading */}
-            <div style={{ textAlign: 'center', marginTop: 16, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: '#2C1A0E' }}>
-              ได้ยินแล้วครับ 🙏
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A', opacity: 0.65, marginTop: 4 }}>
+              tap ได้มากกว่า 1 อย่างเลยครับ
             </div>
-
-            {/* C) Body */}
-            <div style={{ textAlign: 'center', marginTop: 8, padding: '0 24px', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#6B4C2A', lineHeight: 1.7 }}>
-              feedback ของคุณส่งถึงทีมงาน Best Part โดยตรงเลยครับ
-            </div>
-
-            {/* Marquee — เรื่องที่เราทำเพราะคุณ */}
-            {joeItems.length > 0 && (() => {
-              const marqueeItems = [...joeItems, ...joeItems]
-              return (
-                <div>
-                  <div style={{ marginTop: 20, paddingLeft: 20, marginBottom: 10, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#E8622A', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    เรื่องที่เราทำเพราะคุณ
-                  </div>
-                  <div style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 32, zIndex: 2, background: 'linear-gradient(to right, #FAF3E8, transparent)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 32, zIndex: 2, background: 'linear-gradient(to left, #FAF3E8, transparent)', pointerEvents: 'none' }} />
-                    <div
-                      onMouseEnter={() => setMarqueePaused(true)}
-                      onMouseLeave={() => setMarqueePaused(false)}
-                      style={{
-                        display: 'flex',
-                        gap: 10,
-                        width: 'fit-content',
-                        paddingLeft: 16,
-                        animation: 'marqueeScroll 18s linear infinite',
-                        animationPlayState: marqueePaused ? 'paused' : 'running',
-                      }}
-                    >
-                      {marqueeItems.map((item: any, idx: number) => {
-                        const statusColor = item.status === 'done' ? '#22C55E' : item.status === 'in-progress' ? '#F5A623' : '#94A3B8'
-                        const statusTextColor = item.status === 'done' ? '#15803D' : item.status === 'in-progress' ? '#B45309' : '#64748B'
-                        const statusLabel = item.status === 'done' ? 'เสร็จแล้ว' : item.status === 'in-progress' ? 'กำลังทำ' : 'รับทราบ'
-                        return (
-                          <div
-                            key={`${item.id}-${idx}`}
-                            onClick={() => navigate('/meunfun')}
-                            style={{
-                              flexShrink: 0,
-                              width: 130,
-                              background: 'white',
-                              borderRadius: 14,
-                              padding: 12,
-                              border: '1.5px solid rgba(44,26,14,0.06)',
-                              boxShadow: '0 2px 8px rgba(44,26,14,0.06)',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
-                              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 9, color: statusTextColor }}>
-                                {statusLabel}
-                              </div>
-                            </div>
-                            <div style={{
-                              width: 36, height: 36, borderRadius: 10,
-                              background: 'rgba(232,98,42,0.08)',
-                              border: '1.5px dashed rgba(232,98,42,0.2)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 9, color: 'rgba(232,98,42,0.3)', fontFamily: '"DM Sans", system-ui',
-                              marginBottom: 8,
-                            }}>
-                              img
-                            </div>
-                            <div style={{
-                              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#2C1A0E', lineHeight: 1.3,
-                              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                            }}>
-                              {item.title}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* D) Proof Card */}
-            {proofCard !== null && (
-              <div style={{ marginTop: 20, animation: 'proofReveal 0.5s cubic-bezier(0.22,1,0.36,1) 0.2s both' }}>
-                <div style={{
-                  background: 'white',
-                  borderRadius: 20,
-                  overflow: 'hidden',
-                  border: '1.5px solid rgba(232,98,42,0.12)',
-                  boxShadow: '0 8px 32px rgba(232,98,42,0.12)',
-                  margin: '0 20px',
-                }}>
-                  {/* Hero area */}
-                  <div style={{
-                    height: 110,
-                    background: 'linear-gradient(135deg, #FFF3EC, #FDEBD0)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: 64, height: 64, borderRadius: 16,
-                      background: 'rgba(232,98,42,0.1)',
-                      border: '2px dashed rgba(232,98,42,0.2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, color: 'rgba(232,98,42,0.4)', fontFamily: '"DM Sans", system-ui',
-                    }}>
-                      img
-                    </div>
-                    <div style={{
-                      position: 'absolute', top: 12, right: 12,
-                      background: '#DCFCE7', color: '#15803D',
-                      fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11,
-                      padding: '4px 10px', borderRadius: 20,
-                    }}>
-                      ✅ ทำแล้วครับ
-                    </div>
-                  </div>
-
-                  {/* Content area */}
-                  <div style={{ padding: 16 }}>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#E8622A', letterSpacing: '0.06em', marginBottom: 8 }}>
-                      ✨ เพราะเสียงจากลูกค้าอย่างคุณ
-                    </div>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 18, color: '#2C1A0E', lineHeight: 1.25, marginBottom: 6 }}>
-                      {proofCard.title}
-                    </div>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A', lineHeight: 1.65, marginBottom: 14 }}>
-                      {proofCard.story_text
-                        ? proofCard.story_text.slice(0, 80) + (proofCard.story_text.length > 80 ? '...' : '')
-                        : proofCard.summary}
-                    </div>
-
-                    {/* Timeline items */}
-                    {timelineItems.length > 0 && (
-                      <div style={{ marginBottom: 14 }}>
-                        {timelineItems.map((item: any, idx: number) => (
-                          <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-                            <div style={{
-                              width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5,
-                              background: idx === timelineItems.length - 1 ? '#E8622A' : '#D4C4B0',
-                            }} />
-                            <div>
-                              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: '#6B4C2A', opacity: 0.6 }}>
-                                {item.date}
-                              </div>
-                              <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#2C1A0E', lineHeight: 1.5 }}>
-                                {item.note}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div style={{ height: 1, background: 'rgba(44,26,14,0.06)', marginBottom: 12 }} />
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div
-                        onClick={() => navigate('/meunfun')}
-                        style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#E8622A', cursor: 'pointer' }}
-                      >
-                        ดูเรื่องราวอื่นๆ →
-                      </div>
-                      {proofCard.inspired_by_nickname && (
-                        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.4)' }}>
-                          โดย {proofCard.inspired_by_nickname}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            {selectedChips.length > 0 && (
+              <div style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontFamily: '"Sarabun", system-ui',
+                color: '#E8622A',
+                fontWeight: 600,
+                animation: 'fadeSlideUp 0.2s ease-out',
+              }}>
+                เลือกไปแล้ว {selectedChips.length} อย่างครับ{selectedChips.length >= 3 ? ' ✨' : ''}
               </div>
             )}
+          </div>
 
-            {/* E) CTA Button */}
-            <div style={{ marginTop: 20, padding: '0 20px 40px' }}>
+          {/* C) Chips */}
+          <div style={{ marginTop: 20, padding: '0 20px', display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            {DELIGHT_CHIPS.map(chip => {
+              const selected = selectedChips.includes(chip.id)
+              const flying = isTransitioning && selected
+              const bouncing = chipAnimation === chip.id
+              const flyDelay = isTransitioning ? selectedChips.indexOf(chip.id) * 40 + 'ms' : '0ms'
+              return (
+                <div
+                  key={chip.id}
+                  onClick={() => toggleChip(chip.id)}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: 50,
+                    background: selected ? '#E8622A' : 'transparent',
+                    border: selected ? '1.5px solid #E8622A' : '1.5px dashed rgba(44,26,14,0.2)',
+                    color: selected ? 'white' : '#2C1A0E',
+                    fontFamily: '"Sarabun", system-ui',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease',
+                    animation: flying
+                      ? `chipFlyUp 0.4s ease-in both`
+                      : bouncing
+                      ? 'jellyPop 0.35s ease-out'
+                      : 'none',
+                    animationDelay: flying ? flyDelay : '0ms',
+                  }}
+                >
+                  {chip.label}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* D) Optional text */}
+          <div style={{ marginTop: 20, padding: '0 20px' }}>
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A' }}>
+              อยากบอกอะไรเพิ่มไหมครับ?
+            </div>
+            <textarea
+              key={hintIndex}
+              value={freeText}
+              onChange={e => setFreeText(e.target.value)}
+              placeholder={ROTATING_HINTS[hintIndex]}
+              onFocus={e => { e.currentTarget.style.borderColor = '#E8622A' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(44,26,14,0.1)' }}
+              style={{
+                width: '100%',
+                marginTop: 8,
+                padding: '12px 14px',
+                borderRadius: 14,
+                border: '1.5px solid rgba(44,26,14,0.1)',
+                background: 'white',
+                fontFamily: '"Sarabun", system-ui',
+                fontSize: 14,
+                color: '#2C1A0E',
+                minHeight: 80,
+                resize: 'none',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'all 0.3s ease',
+              }}
+            />
+          </div>
+
+          {/* E) CTA Button */}
+          <div style={{ marginTop: 20, padding: '0 20px 32px' }}>
+            {selectedChips.length === 0 ? (
               <button
-                onClick={() => navigate('/thanks')}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: 16,
+                  borderRadius: 50,
+                  background: 'rgba(44,26,14,0.08)',
+                  color: 'rgba(44,26,14,0.3)',
+                  fontFamily: '"Sarabun", system-ui',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  border: 'none',
+                  cursor: 'not-allowed',
+                }}
+              >
+                เลือกสิ่งที่ชอบก่อนนะครับ
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 style={{
                   width: '100%',
                   padding: 16,
@@ -567,14 +262,15 @@ export default function HappyPath() {
                   fontWeight: 700,
                   fontSize: 16,
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'default' : 'pointer',
+                  animation: isSubmitting ? undefined : 'pulseBtn 1.5s ease-in-out infinite',
                 }}
               >
-                รับทราบครับ →
+                {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงาน →'}
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </MobileFrame>
   )

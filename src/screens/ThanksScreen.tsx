@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBow } from '../components/Illustrations'
-import { StepDots, C } from '../components/SharedUI'
+import { C } from '../components/SharedUI'
 import SocialFooter from '../components/SocialFooter'
 import { supabase } from '../lib/supabase'
 
@@ -21,13 +21,6 @@ interface MenuItemDB {
   image_url: string | null
   base_price: number | null
   display_order: number
-}
-
-interface JoeEntry {
-  id: string
-  title: string
-  icon: string
-  summary: string
 }
 
 interface CupidSettings {
@@ -52,8 +45,8 @@ function MenuVote({ categories }: { categories: Category[] }) {
   const [_selectedCat, setSelectedCat] = useState<Category | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItemDB[]>([])
   const [loadingMenus, setLoadingMenus] = useState(false)
-  const [tappedId, setTappedId] = useState<string | null>(null)   // brief scale-up
-  const [voted, setVoted] = useState(false)                        // show thank-you card
+  const [tappedId, setTappedId] = useState<string | null>(null)
+  const [voted, setVoted] = useState(false)
 
   const handleCatSelect = async (cat: Category) => {
     setSelectedCat(cat)
@@ -74,7 +67,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
     if (tappedId) return
     setTappedId(menu.id)
 
-    // FIX 1: Save vote_choice (name_th) to cupid_feedback row
     const feedbackId = sessionStorage.getItem('last_feedback_id')
     console.log('Saving vote, feedback_id:', feedbackId, 'vote:', menu.name_th)
     if (feedbackId) {
@@ -88,7 +80,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
       console.warn('No feedback_id in sessionStorage — cannot save vote')
     }
 
-    // After 600ms cross-fade to thank-you card
     setTimeout(() => setVoted(true), 600)
   }
 
@@ -100,11 +91,9 @@ function MenuVote({ categories }: { categories: Category[] }) {
       borderRadius: 20,
       background: C.cream,
       padding: '16px',
-      // transition for cross-fade
       transition: 'opacity .35s ease',
     }}>
 
-      {/* Thank-you card (post-vote) */}
       {voted ? (
         <div style={{
           background: '#fff',
@@ -140,7 +129,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
           </div>
 
           {step === 'category' ? (
-            /* ── Step 1: Category Grid (3-col, 64px circles) ── */
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               {categories.map(cat => (
                 <button key={cat.id} onClick={() => handleCatSelect(cat)}
@@ -149,7 +137,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
                     fontFamily: 'inherit', padding: '6px 4px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   }}>
-                  {/* 64px circle icon */}
                   <div style={{
                     width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
                     filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))',
@@ -180,9 +167,7 @@ function MenuVote({ categories }: { categories: Category[] }) {
               ))}
             </div>
           ) : (
-            /* ── Step 2: Circular photo grid (3-col) ── */
             <>
-              {/* Back button */}
               <button onClick={() => setStep('category')}
                 style={{
                   background: 'transparent', border: 'none', cursor: 'pointer', padding: '0 0 10px',
@@ -200,9 +185,7 @@ function MenuVote({ categories }: { categories: Category[] }) {
                   ไม่มีเมนูในหมวดนี้ครับ
                 </div>
               ) : (
-                <div style={{
-                  display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
-                }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                   {menuItems.map(menu => {
                     const on = tappedId === menu.id
                     const isDisabled = tappedId !== null && !on
@@ -217,7 +200,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
                           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                           transition: 'opacity .2s ease',
                         }}>
-                        {/* 72px circle photo with optional selected ring */}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
                           <div style={{
                             width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
@@ -240,7 +222,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
                               </div>
                             )}
                           </div>
-                          {/* Orange checkmark badge */}
                           {on && (
                             <div style={{
                               position: 'absolute', top: 0, right: 0,
@@ -255,7 +236,6 @@ function MenuVote({ categories }: { categories: Category[] }) {
                             </div>
                           )}
                         </div>
-                        {/* Name */}
                         <div style={{
                           fontFamily: '"Sarabun", system-ui', fontSize: 11, fontWeight: 600,
                           color: C.brown, lineHeight: 1.3, textAlign: 'center',
@@ -274,203 +254,12 @@ function MenuVote({ categories }: { categories: Category[] }) {
         </>
       )}
 
-      {/* Keyframe for thank-you card fade-in */}
       <style>{`
         @keyframes voteThanksFadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
-    </div>
-  )
-}
-
-// ── Section: Announcement Card ─────────────────────────────────────────────
-
-function AnnouncementCard({ settings, size }: { settings: CupidSettings; size: 'primary' | 'secondary' }) {
-  const [vote, setVote] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(size === 'primary')
-  const opts = (settings.announcement_vote_options || []).filter(Boolean)
-
-  const isPrimary = size === 'primary'
-
-  return (
-    <div style={{
-      padding: isPrimary ? '14px 16px' : '10px 14px',
-      borderRadius: 18,
-      background: isPrimary ? 'linear-gradient(135deg, #FFF8F4, #FFF0E6)' : 'rgba(44,26,14,0.03)',
-      border: isPrimary ? '1.5px solid rgba(232,98,42,0.4)' : '1px solid rgba(44,26,14,0.1)',
-    }}>
-      <div style={{
-        fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
-        letterSpacing: 1.1, textTransform: 'uppercase',
-        color: isPrimary ? C.brownSoft : 'rgba(44,26,14,0.4)', marginBottom: isPrimary ? 6 : 4,
-      }}>
-        📣 มีเรื่องอยากบอก · จากทีมงาน
-      </div>
-
-      {/* Secondary: tap to expand */}
-      {!isPrimary ? (
-        <button onClick={() => setExpanded(e => !e)} style={{
-          background: 'transparent', border: 'none', padding: 0,
-          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: '100%',
-          textAlign: 'left',
-        }}>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.brown, flex: 1 }}>
-            {settings.announcement_title || 'ข้อความจากทีมงาน'}
-          </div>
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.brownSoft} strokeWidth="2.2" strokeLinecap="round">
-            <path d={expanded ? 'M2 10l5-5 5 5' : 'M2 5l5 5 5-5'} />
-          </svg>
-        </button>
-      ) : (
-        settings.announcement_title && (
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.35, marginBottom: 4 }}>
-            {settings.announcement_title}
-          </div>
-        )
-      )}
-
-      {(isPrimary || expanded) && (
-        <>
-          {settings.announcement_text && (
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, lineHeight: 1.6, marginTop: isPrimary ? 0 : 8 }}>
-              {settings.announcement_text}
-            </div>
-          )}
-          {opts.length > 0 && (
-            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {opts.map((opt, i) => {
-                const key = String.fromCharCode(65 + i)
-                const on = vote === key
-                return (
-                  <button key={key} onClick={() => !vote && setVote(key)} disabled={!!vote && !on}
-                    style={{
-                      padding: '9px 14px', borderRadius: 12, border: 'none',
-                      background: on ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.7)',
-                      boxShadow: on ? '0 0 0 1.5px #E8622A inset' : '0 1px 3px rgba(44,26,14,0.06)',
-                      fontFamily: 'inherit', textAlign: 'left',
-                      cursor: vote ? 'default' : 'pointer',
-                      opacity: !!vote && !on ? 0.6 : 1, transition: 'all .2s ease',
-                      display: 'flex', alignItems: 'center', gap: 10,
-                    }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-                      background: on ? C.orange : 'transparent',
-                      border: `1.5px solid ${on ? C.orange : 'rgba(44,26,14,0.2)'}`,
-                      color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 10,
-                    }}>
-                      {on ? '✓' : key}
-                    </div>
-                    <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brown, fontWeight: on ? 700 : 400 }}>
-                      {opt}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
-// ── Section: Inline Q&A ────────────────────────────────────────────────────
-
-function QACard({ settings, size }: { settings: CupidSettings; size: 'primary' | 'secondary' }) {
-  const [selected, setSelected] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
-  const [expanded, setExpanded] = useState(size === 'primary')
-  const options = (settings.weekly_question_options || []).filter(Boolean)
-  const isPrimary = size === 'primary'
-
-  const handleAnswer = (ans: string) => {
-    if (selected) return
-    setSelected(ans)
-    setDone(true)
-    const lastId = sessionStorage.getItem('last_feedback_id')
-    if (lastId) {
-      supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
-    }
-  }
-
-  return (
-    <div style={{
-      padding: isPrimary ? '14px 16px' : '10px 14px',
-      borderRadius: 18,
-      background: isPrimary ? '#fff' : 'rgba(44,26,14,0.03)',
-      border: isPrimary ? '1.5px solid rgba(44,26,14,0.1)' : '1px solid rgba(44,26,14,0.08)',
-    }}>
-      <div style={{
-        fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
-        letterSpacing: 1, textTransform: 'uppercase',
-        color: isPrimary ? C.orange : 'rgba(44,26,14,0.35)', marginBottom: isPrimary ? 6 : 4,
-      }}>
-        📋 คำถามของสัปดาห์
-      </div>
-
-      {!isPrimary ? (
-        <button onClick={() => setExpanded(e => !e)} style={{
-          background: 'transparent', border: 'none', padding: 0,
-          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', width: '100%', textAlign: 'left',
-        }}>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: C.brown, flex: 1 }}>
-            {settings.weekly_question || 'คำถามสัปดาห์นี้'}
-          </div>
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke={C.brownSoft} strokeWidth="2.2" strokeLinecap="round">
-            <path d={expanded ? 'M2 10l5-5 5 5' : 'M2 5l5 5 5-5'} />
-          </svg>
-        </button>
-      ) : (
-        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, lineHeight: 1.35, marginBottom: 10 }}>
-          {settings.weekly_question}
-        </div>
-      )}
-
-      {(isPrimary || expanded) && (
-        <>
-          {done ? (
-            <div style={{
-              marginTop: 10, padding: '8px 14px', borderRadius: 10,
-              background: 'rgba(63,142,92,0.1)', border: '1px solid rgba(63,142,92,0.2)',
-              fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#3F8E5C', fontWeight: 600,
-            }}>
-              ✓ ขอบคุณครับ
-            </div>
-          ) : (
-            <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: isPrimary ? 0 : 10 }}>
-                {options.map(opt => {
-                  const on = selected === opt
-                  return (
-                    <button key={opt} onClick={() => handleAnswer(opt)}
-                      style={{
-                        padding: '8px 16px', borderRadius: 20,
-                        border: `1.5px solid ${on ? C.orange : C.orange}`,
-                        background: on ? C.orange : 'transparent',
-                        color: on ? '#fff' : C.orange,
-                        fontFamily: '"Sarabun", system-ui', fontSize: 13, fontWeight: 600,
-                        cursor: 'pointer', transition: 'all .15s ease',
-                      }}>
-                      {opt}
-                    </button>
-                  )
-                })}
-              </div>
-              <div style={{ textAlign: 'right', marginTop: 8 }}>
-                <button onClick={() => setDone(true)} style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.3)',
-                }}>
-                  ข้ามครับ
-                </button>
-              </div>
-            </>
-          )}
-        </>
-      )}
     </div>
   )
 }
@@ -483,7 +272,10 @@ export default function ThanksScreen() {
   const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [settings, setSettings] = useState<CupidSettings | null>(null)
-  const [joeEntry, setJoeEntry] = useState<JoeEntry | null>(null)
+  const [joeItems, setJoeItems] = useState<any[]>([])
+  const [marqueePaused, setMarqueePaused] = useState(false)
+  const [showVote, setShowVote] = useState(false)
+  const [qaSelected, setQaSelected] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
@@ -505,130 +297,353 @@ export default function ThanksScreen() {
       if (data) setSettings(data as CupidSettings)
     })
 
-    supabase.from('cupid_joe_mode').select('id, title, icon, summary').eq('status', 'done')
-      .order('display_order', { ascending: false }).limit(1).single().then(({ data }) => {
-        if (data) setJoeEntry(data as JoeEntry)
-      })
+    const fetchJoe = async () => {
+      const { data } = await supabase
+        .from('cupid_joe_mode')
+        .select('id, title, icon, status, summary')
+        .order('created_at', { ascending: false })
+        .limit(8)
+      if (data) setJoeItems(data)
+    }
+    fetchJoe()
   }, [])
 
-  // Build ordered cards array
-  const cards: { type: 'announcement' | 'qa'; size: 'primary' | 'secondary' }[] = []
-  if (settings?.announcement_is_active) {
-    cards.push({ type: 'announcement', size: (settings.announcement_priority || 'primary') as 'primary' | 'secondary' })
-  }
-  if (settings?.qa_is_active) {
-    cards.push({ type: 'qa', size: (settings.qa_priority || 'secondary') as 'primary' | 'secondary' })
-  }
-  // Sort: primary first; if both claim primary, first one wins primary
-  cards.sort((a, b) => a.size === 'primary' && b.size !== 'primary' ? -1 : b.size === 'primary' && a.size !== 'primary' ? 1 : 0)
-  // If only 1 card, force it primary
-  if (cards.length === 1) cards[0].size = 'primary'
-  // If both claim primary, demote the second
-  if (cards.length === 2 && cards[0].size === 'primary' && cards[1].size === 'primary') {
-    cards[1].size = 'secondary'
+  const handleQaAnswer = (ans: string) => {
+    if (qaSelected) return
+    setQaSelected(ans)
+    const lastId = sessionStorage.getItem('last_feedback_id')
+    if (lastId) {
+      supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
+    }
   }
 
   return (
     <MobileFrame>
-      <div style={{ background: C.cream, minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <div style={{ padding: '4px 18px 0' }}><StepDots step={3} /></div>
+      <style>{`
+        @keyframes floatChar {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes sparkleFloat {
+          0%, 100% { transform: scale(1) translateY(0); opacity: 0.7; }
+          50% { transform: scale(1.25) translateY(-5px); opacity: 1; }
+        }
+        @keyframes characterCelebrate {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-10px) rotate(-4deg); }
+          75% { transform: translateY(-6px) rotate(4deg); }
+        }
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(14px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes marqueeScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes badgePop {
+          0% { transform: scale(0.8); opacity: 0; }
+          60% { transform: scale(1.06); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cardEntrance {
+          from { opacity: 0; transform: translateY(10px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
 
-        {/* ── Hero ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 28px 0' }}>
-          <div className="bow-anim"><MascotBow size={150} /></div>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: C.brown, marginTop: 8, textAlign: 'center', lineHeight: 1.25 }}>
-            ขอบคุณมากเลยครับ ❤️
-          </div>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: C.brownSoft, marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
-            คุณเป็นคนที่{' '}
-            <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>
-              {feedbackCount != null ? feedbackCount.toLocaleString() : '...'}
-            </span>{' '}
-            ที่ช่วยให้ Best Part ดีขึ้นครับ
-          </div>
-          <div style={{
-            marginTop: 12, padding: '7px 16px', borderRadius: 999,
-            background: 'rgba(63,142,92,0.12)', border: '1px solid rgba(63,142,92,0.2)',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#3F8E5C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7.5L5.5 11L12 4"/></svg>
-            <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#3F8E5C', fontWeight: 600 }}>
-              ส่งให้ทีมงานแล้ว · ทีมงานจะอ่านคืนนี้เองครับ 🙏
-            </span>
-          </div>
-        </div>
+      <div style={{ background: '#FAF3E8', height: '100dvh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
 
-        {/* ── Menu Vote ── */}
-        <MenuVote categories={categories} />
-
-        {/* ── Announcement + Q&A (ordered by priority) ── */}
-        {settings && cards.length > 0 && (
-          <div style={{ margin: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {cards.map(card => (
-              card.type === 'announcement'
-                ? <AnnouncementCard key="ann" settings={settings} size={card.size} />
-                : <QACard key="qa" settings={settings} size={card.size} />
-            ))}
-          </div>
-        )}
-
-        {/* ── เหมือนฝัน preview ── */}
-        {joeEntry && (
-          <div style={{
-            margin: '12px 16px 0', padding: '14px 16px', borderRadius: 18,
-            background: 'rgba(232,98,42,0.05)', border: '1px solid rgba(232,98,42,0.2)',
-          }}>
-            <div style={{
-              fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700,
-              letterSpacing: 1, textTransform: 'uppercase', color: C.orange, marginBottom: 10, opacity: 0.8,
-            }}>
-              💘 เหมือนฝัน · สิ่งที่เราทำตามคำขอของคุณ
+        {showVote ? (
+          // ── VOTE FLOW ──
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px 8px' }}>
+              <button
+                onClick={() => setShowVote(false)}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'white', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20, color: '#2C1A0E',
+                  boxShadow: '0 2px 8px rgba(44,26,14,0.1)',
+                }}
+              >
+                ‹
+              </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <MenuVote categories={categories} />
+          </div>
+        ) : (
+          // ── MAIN THANKS VIEW ──
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+
+            {/* ── ZONE 1: HERO ── */}
+            <div style={{ padding: '20px 20px 0', textAlign: 'center' }}>
+              <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+                <span style={{ position: 'absolute', top: -6, left: 10, fontSize: 16, animation: 'sparkleFloat 2s ease-in-out infinite' }}>✨</span>
+                <span style={{ position: 'absolute', top: -8, right: 8, fontSize: 13, animation: 'sparkleFloat 2.3s ease-in-out 0.3s infinite' }}>✨</span>
+                <span style={{ position: 'absolute', bottom: 4, right: 0, fontSize: 11, animation: 'sparkleFloat 1.9s ease-in-out 0.6s infinite' }}>✨</span>
+                <div style={{ animation: 'characterCelebrate 0.7s ease-out, floatChar 3s ease-in-out 0.7s infinite' }}>
+                  <MascotBow size={80} />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 14, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: '#2C1A0E', animation: 'fadeSlideUp 0.4s ease-out 0.1s both' }}>
+                ขอบคุณมากเลยครับ 🙏
+              </div>
+
+              <div style={{ marginTop: 4, fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A', opacity: 0.7, animation: 'fadeSlideUp 0.4s ease-out 0.2s both' }}>
+                คุณเป็นส่วนหนึ่งที่ทำให้ Best Part ดีขึ้นครับ
+              </div>
+
               <div style={{
-                width: 46, height: 46, borderRadius: 13, background: C.orangeSoft,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0,
+                marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(34,197,94,0.1)', borderRadius: 50, padding: '7px 14px',
+                border: '1px solid rgba(34,197,94,0.2)',
+                animation: 'badgePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
               }}>
-                {joeEntry.icon}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
-                  borderRadius: 99, background: 'rgba(100,200,120,0.15)',
-                  fontFamily: '"Sarabun", system-ui', fontSize: 10, fontWeight: 700, color: '#4caf78', marginBottom: 4,
-                }}>
-                  ✅ ทำแล้วครับ
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: C.brown, lineHeight: 1.35 }}>
-                  {joeEntry.title}
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft, marginTop: 2, lineHeight: 1.4 }}>
-                  {joeEntry.summary.length > 60 ? joeEntry.summary.slice(0, 60) + '...' : joeEntry.summary}
-                </div>
+                <span style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#15803D' }}>
+                  ✓ ส่งให้ทีมงานแล้วครับ
+                </span>
               </div>
             </div>
-            <button onClick={() => navigate('/meunfun')} style={{
-              marginTop: 10, background: 'transparent', border: 'none',
-              color: C.orange, fontFamily: '"Sarabun", system-ui', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0,
+
+            {/* ── ZONE 2: MARQUEE ── */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ paddingLeft: 20, marginBottom: 8, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 10, color: '#E8622A', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                เรื่องที่เราทำเพราะคุณ
+              </div>
+
+              {joeItems.length > 0 && (
+                <div style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 28, zIndex: 2, background: 'linear-gradient(to right, #FAF3E8, transparent)', pointerEvents: 'none' }} />
+                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, zIndex: 2, background: 'linear-gradient(to left, #FAF3E8, transparent)', pointerEvents: 'none' }} />
+                  <div
+                    style={{
+                      display: 'flex', gap: 8, width: 'fit-content', paddingLeft: 16,
+                      animation: 'marqueeScroll 16s linear infinite',
+                      animationPlayState: marqueePaused ? 'paused' : 'running',
+                    }}
+                    onMouseEnter={() => setMarqueePaused(true)}
+                    onMouseLeave={() => setMarqueePaused(false)}
+                  >
+                    {[...joeItems, ...joeItems].map((item: any, idx: number) => {
+                      const statusColor = item.status === 'done' ? '#22C55E' : item.status === 'in-progress' ? '#F5A623' : '#94A3B8'
+                      const statusLabel = item.status === 'done' ? 'เสร็จ' : item.status === 'in-progress' ? 'กำลังทำ' : 'รับทราบ'
+                      return (
+                        <div
+                          key={`${item.id}-${idx}`}
+                          onClick={() => navigate('/meunfun')}
+                          style={{
+                            flexShrink: 0, width: 110,
+                            background: 'white', borderRadius: 12, padding: 10,
+                            border: '1.5px solid rgba(44,26,14,0.06)',
+                            boxShadow: '0 2px 6px rgba(44,26,14,0.05)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
+                            <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 9, color: statusColor }}>
+                              {statusLabel}
+                            </div>
+                          </div>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 8,
+                            background: 'rgba(232,98,42,0.07)',
+                            border: '1.5px dashed rgba(232,98,42,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 8, color: 'rgba(232,98,42,0.3)', margin: '6px 0',
+                          }}>
+                            img
+                          </div>
+                          <div style={{
+                            fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11, color: '#2C1A0E', lineHeight: 1.3,
+                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          }}>
+                            {item.title}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── ZONE 3: FEATURE CARDS ── */}
+            <div style={{
+              padding: '12px 16px 0',
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+              animation: 'cardEntrance 0.4s ease-out 0.4s both',
             }}>
-              ดูทั้งหมด →
-            </button>
+              {/* Card 1 — โหวตเมนู */}
+              <button
+                onClick={() => setShowVote(true)}
+                style={{
+                  borderRadius: 16, padding: 14, cursor: 'pointer', border: 'none', textAlign: 'left',
+                  display: 'flex', flexDirection: 'column',
+                  background: 'linear-gradient(135deg, #E8622A, #C94E1A)',
+                  boxShadow: '0 4px 16px rgba(232,98,42,0.3)',
+                }}
+              >
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1.5px dashed rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, color: 'rgba(255,255,255,0.5)',
+                }}>
+                  img
+                </div>
+                <div style={{ marginTop: 8, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: 'white' }}>
+                  โหวตเมนูที่ชอบ
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 3 }}>
+                  บอกเราได้เลยครับ
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: 'white', marginTop: 8 }}>
+                  เลือกเลย →
+                </div>
+              </button>
+
+              {/* Card 2 — เหมือนฝัน */}
+              <button
+                onClick={() => navigate('/meunfun')}
+                style={{
+                  borderRadius: 16, padding: 14, cursor: 'pointer', border: 'none', textAlign: 'left',
+                  display: 'flex', flexDirection: 'column',
+                  background: '#2C1A0E',
+                  boxShadow: '0 4px 16px rgba(44,26,14,0.25)',
+                }}
+              >
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1.5px dashed rgba(255,255,255,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, color: 'rgba(255,255,255,0.2)',
+                }}>
+                  img
+                </div>
+                <div style={{ marginTop: 8, fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: 'white' }}>
+                  เหมือนฝัน
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3 }}>
+                  ดูพัฒนาการของเรา
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#F5A623', marginTop: 8 }}>
+                  ดูเลย →
+                </div>
+              </button>
+
+              {/* Conditional Card — Q&A */}
+              {settings?.qa_is_active && settings.weekly_question && (
+                <div style={{
+                  gridColumn: 'span 2',
+                  background: 'white', borderRadius: 16, padding: 14,
+                  border: '1.5px solid rgba(44,26,14,0.07)',
+                  boxShadow: '0 2px 8px rgba(44,26,14,0.05)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{
+                      background: '#FEF3C7', color: '#B45309',
+                      fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 10,
+                      padding: '3px 8px', borderRadius: 20,
+                    }}>
+                      📋 คำถามของสัปดาห์
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: '#2C1A0E', marginBottom: 10 }}>
+                    {settings.weekly_question}
+                  </div>
+                  {qaSelected ? (
+                    <div style={{
+                      padding: '8px 14px', borderRadius: 10,
+                      background: 'rgba(63,142,92,0.1)', border: '1px solid rgba(63,142,92,0.2)',
+                      fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#3F8E5C', fontWeight: 600,
+                    }}>
+                      ✓ ขอบคุณครับ
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {(settings.weekly_question_options || []).filter(Boolean).map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => handleQaAnswer(opt)}
+                          style={{
+                            padding: '8px 14px', borderRadius: 50,
+                            border: '1.5px solid rgba(232,98,42,0.3)',
+                            background: 'transparent', color: '#E8622A',
+                            fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Conditional Card — Announcement */}
+              {!settings?.qa_is_active && settings?.announcement_is_active && settings.announcement_text && (
+                <div style={{
+                  gridColumn: 'span 2',
+                  background: '#FFF8EE', borderRadius: 16, padding: 14,
+                  border: '1.5px dashed rgba(232,98,42,0.25)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 10,
+                      color: '#E8622A', letterSpacing: '0.1em', textTransform: 'uppercase',
+                    }}>
+                      ANNOUNCEMENT
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#2C1A0E', lineHeight: 1.6, marginTop: 6 }}>
+                    {settings.announcement_text}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── ZONE 4: CTA ── */}
+            <div style={{ padding: '14px 16px 24px', marginTop: 'auto' }}>
+              <button
+                onClick={() => navigate('/meunfun')}
+                style={{
+                  width: '100%', padding: 14, borderRadius: 50,
+                  background: 'transparent',
+                  border: '1.5px solid #E8622A',
+                  color: '#E8622A',
+                  fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14,
+                  cursor: 'pointer',
+                }}
+              >
+                ดูเมนูและสั่งอาหาร →
+              </button>
+
+              <div style={{ marginTop: 10, textAlign: 'center' }}>
+                <SocialFooter feedbackCount={feedbackCount} />
+              </div>
+
+              <div style={{ marginTop: 8, textAlign: 'center' }}>
+                <button
+                  onClick={() => navigate('/landing')}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.35)',
+                  }}
+                >
+                  กลับหน้าแรก
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
-
-        {/* ── Social Footer ── */}
-        <div style={{ marginTop: 16 }}>
-          <SocialFooter feedbackCount={feedbackCount} />
-        </div>
-
-        <div style={{ padding: '0 24px 20px', textAlign: 'center' }}>
-          <button onClick={() => navigate('/landing')} style={{
-            background: 'transparent', border: 'none', color: 'rgba(44,26,14,0.35)',
-            fontFamily: '"Sarabun", system-ui', fontSize: 12, cursor: 'pointer',
-          }}>
-            กลับหน้าแรก
-          </button>
-        </div>
       </div>
     </MobileFrame>
   )
