@@ -5,6 +5,7 @@ import LandingScreen from './screens/LandingScreen'
 import HappyPath from './screens/HappyPath'
 import NeutralPath from './screens/NeutralPath'
 import ProblemPath from './screens/ProblemPath'
+import ProblemClosingScreen from './screens/ProblemClosingScreen'
 import ThanksScreen from './screens/ThanksScreen'
 import QASession from './screens/QASession'
 import JoeMode from './screens/JoeMode'
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/happy" element={<HappyPath />} />
         <Route path="/neutral" element={<NeutralPath />} />
         <Route path="/problem" element={<ProblemPath />} />
+        <Route path="/problem-closing" element={<ProblemClosingScreen />} />
         <Route path="/thanks" element={<ThanksScreen />} />
         <Route path="/qa" element={<QASession />} />
         <Route path="/meunfun" element={<JoeMode />} />
