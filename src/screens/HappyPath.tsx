@@ -17,13 +17,12 @@ const DELIGHT_CHIPS = [
   { id: 'recommend', label: 'แนะนำได้เลย',   category: 'service' },
 ]
 
-const ROTATING_HINTS = [
-  'เมนูที่อร่อยที่สุดวันนี้คืออะไรครับ?',
-  'มีอะไรที่อยากให้ Best Part ทำเพิ่มไหมครับ?',
-  'วันนี้ได้เมนูที่ชอบไหมครับ?',
-  'อาหารมาถึงตอนยังร้อนอยู่ไหมครับ?',
-  'ถ้าจะแนะนำเพื่อน จะบอกว่าอะไรดีครับ?',
-  'มีอะไรที่ทำให้วันนี้ดีขึ้นได้ไหมครับ?',
+const HAPPY_TEXT_HINTS = [
+  'พูดได้เลยครับ ไม่ว่าจะเป็นอะไรก็ตาม',
+  'เมนูที่ชอบวันนี้คืออะไรครับ?',
+  'มีอะไรอยากให้ทีมงานรู้ไหมครับ?',
+  'วันนี้รู้สึกยังไงบ้างครับ?',
+  'บอกได้เลยครับ ทีมงานอ่านเองทุกคำ',
 ]
 
 export default function HappyPath() {
@@ -37,7 +36,7 @@ export default function HappyPath() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setHintIndex(prev => (prev + 1) % ROTATING_HINTS.length)
+      setHintIndex(prev => (prev + 1) % HAPPY_TEXT_HINTS.length)
     }, 2500)
     return () => clearInterval(interval)
   }, [])
@@ -199,33 +198,38 @@ export default function HappyPath() {
 
           {/* D) Optional text */}
           <div style={{ marginTop: 20, padding: '0 20px' }}>
-            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#6B4C2A' }}>
-              อยากบอกอะไรเพิ่มไหมครับ?
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.55)' }}>
+              หรือจะฝากอะไรไว้ก็ได้เลยครับ
             </div>
             <textarea
               key={hintIndex}
               value={freeText}
               onChange={e => setFreeText(e.target.value)}
-              placeholder={ROTATING_HINTS[hintIndex]}
-              onFocus={e => { e.currentTarget.style.borderColor = '#E8622A' }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(44,26,14,0.1)' }}
+              placeholder={HAPPY_TEXT_HINTS[hintIndex]}
+              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(232,98,42,0.3)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(44,26,14,0.08)' }}
               style={{
                 width: '100%',
                 marginTop: 8,
-                padding: '12px 14px',
-                borderRadius: 14,
-                border: '1.5px solid rgba(44,26,14,0.1)',
+                padding: '14px 16px',
+                borderRadius: 16,
+                border: '1.5px solid rgba(44,26,14,0.08)',
                 background: 'white',
                 fontFamily: '"Sarabun", system-ui',
                 fontSize: 14,
                 color: '#2C1A0E',
-                minHeight: 80,
+                lineHeight: 1.7,
+                minHeight: 90,
                 resize: 'none',
                 outline: 'none',
                 boxSizing: 'border-box',
-                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 8px rgba(44,26,14,0.04)',
+                transition: 'border-color 0.2s ease',
               }}
             />
+            <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.35)', textAlign: 'center', marginTop: 8 }}>
+              ทีมงานอ่านเองทุกคำครับ 🙏
+            </div>
           </div>
 
           {/* E) CTA Button */}
