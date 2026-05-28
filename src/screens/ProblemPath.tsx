@@ -5,21 +5,29 @@ import { MascotBowl } from '../components/Illustrations'
 import { supabase } from '../lib/supabase'
 
 const PROBLEM_CATEGORIES = [
-  { id: 'wrong_order',    label: 'Order ผิด / สลับ',    sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',       isCritical: false },
-  { id: 'missing_item',  label: 'ของขาด / ไม่ครบ',     sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',           isCritical: false },
-  { id: 'taste_issue',   label: 'รสชาติผิดปกติ',        sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',     isCritical: false },
-  { id: 'foreign_object',label: 'พบสิ่งแปลกปลอม',       sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',            isCritical: true  },
-  { id: 'undercooked',   label: 'อาหารไม่สุก',          sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',           isCritical: true  },
-  { id: 'other',         label: 'อื่นๆ',                sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',         isCritical: false },
+  { id: 'wrong_order',    label: 'Order ผิด / สลับ',  sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',     isCritical: false, bg: '#FFF3EC', stroke: '#F5A623'             },
+  { id: 'missing_item',  label: 'ของขาด / ไม่ครบ',   sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',         isCritical: false, bg: '#FEF9EC', stroke: '#F5A623'             },
+  { id: 'taste_issue',   label: 'รสชาติผิดปกติ',      sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',   isCritical: false, bg: '#FFF0F0', stroke: '#E8622A'             },
+  { id: 'foreign_object',label: 'พบสิ่งแปลกปลอม',     sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',          isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
+  { id: 'undercooked',   label: 'อาหารไม่สุก',        sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',         isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
+  { id: 'other',         label: 'อื่นๆ',              sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',       isCritical: false, bg: '#F5F0EA', stroke: 'rgba(44,26,14,0.15)' },
 ]
 
 const PLATFORMS = ['Grab', 'LINE MAN', 'Shopee Food', 'หน้าร้าน']
+
+const TRACK_POSITIONS: Record<number, string> = {
+  1: '12.5%',
+  2: '37.5%',
+  3: '62.5%',
+  4: '87.5%',
+}
 
 export default function ProblemPath() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [screen, setScreen] = useState<'intercept' | 'category' | 'detail'>('intercept')
+  const [interceptFading, setInterceptFading] = useState(false)
   const [category, setCategory] = useState<string>('')
   const [platform, setPlatform] = useState<string>('')
   const [phone, setPhone] = useState<string>('')
@@ -30,16 +38,27 @@ export default function ProblemPath() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNightTime, setIsNightTime] = useState(false)
   const [cardStep, setCardStep] = useState<1 | 2 | 3 | 4>(1)
+  const [cardExiting, setCardExiting] = useState(false)
 
   useEffect(() => {
     const hour = new Date().getHours()
     setIsNightTime(hour >= 22 || hour < 8)
   }, [])
 
+  // CHANGE 1: fade intercept then switch
   useEffect(() => {
     if (screen !== 'intercept') return
-    const timer = setTimeout(() => setScreen('category'), 2500)
-    return () => clearTimeout(timer)
+    const fadeTimer = setTimeout(() => {
+      setInterceptFading(true)
+    }, 2000)
+    const switchTimer = setTimeout(() => {
+      setInterceptFading(false)
+      setScreen('category')
+    }, 2500)
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(switchTimer)
+    }
   }, [screen])
 
   useEffect(() => {
@@ -47,6 +66,15 @@ export default function ProblemPath() {
   }, [screen])
 
   const canSubmit = platform !== '' && phone.trim().length >= 9 && orderNumber.trim().length > 0
+
+  // CHANGE 3B: card exit/enter animation helper
+  const advanceCard = (nextStep: 1 | 2 | 3 | 4) => {
+    setCardExiting(true)
+    setTimeout(() => {
+      setCardExiting(false)
+      setCardStep(nextStep)
+    }, 200)
+  }
 
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return
@@ -129,7 +157,9 @@ export default function ProblemPath() {
     margin: '0 12px',
     padding: '22px 20px',
     boxShadow: '0 6px 24px rgba(44,26,14,0.08)',
-    animation: 'cardEntrance 0.35s cubic-bezier(0.22,1,0.36,1) both',
+    animation: cardExiting
+      ? 'cardScaleOut 0.2s ease-in forwards'
+      : 'cardScaleIn 0.35s cubic-bezier(0.22,1,0.36,1)',
   }
 
   const warmInputStyle: React.CSSProperties = {
@@ -200,18 +230,6 @@ export default function ProblemPath() {
           70% { transform: scale(1.05); }
           100% { transform: scale(1); }
         }
-        @keyframes dotPulse1 {
-          0%,100% { transform: scale(1); opacity: 0.3; }
-          33% { transform: scale(1.5); opacity: 1; }
-        }
-        @keyframes dotPulse2 {
-          0%,100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.5); opacity: 1; }
-        }
-        @keyframes dotPulse3 {
-          0%,100% { transform: scale(1); opacity: 0.3; }
-          66% { transform: scale(1.5); opacity: 1; }
-        }
         @keyframes categorySlide {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
@@ -219,6 +237,31 @@ export default function ProblemPath() {
         @keyframes cardEntrance {
           from { opacity: 0; transform: translateY(16px) scale(0.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeInScreen {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOutScreen {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes charWalk {
+          0%,100% { transform: translateY(0) scaleX(1); }
+          25% { transform: translateY(-3px) scaleX(1); }
+          75% { transform: translateY(-3px) scaleX(1); }
+        }
+        @keyframes cardScaleIn {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes cardScaleOut {
+          from { opacity: 1; transform: scale(1) translateY(0); }
+          to { opacity: 0; transform: scale(0.96) translateY(-6px); }
+        }
+        @keyframes progressGlow {
+          0%,100% { box-shadow: 0 0 4px rgba(220,38,38,0.3); }
+          50% { box-shadow: 0 0 10px rgba(220,38,38,0.6); }
         }
         .warm-input:focus {
           background: white !important;
@@ -230,14 +273,22 @@ export default function ProblemPath() {
           box-shadow: 0 0 0 2px rgba(220,38,38,0.2);
           outline: none;
         }
-        .cat-row:active {
-          background: rgba(44,26,14,0.04);
+        .cat-card:active {
+          transform: scale(0.97);
         }
       `}</style>
 
       {/* ── SCREEN 1: INTERCEPT ── */}
       {screen === 'intercept' && (
-        <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          background: '#FAF3E8',
+          minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: interceptFading
+            ? 'fadeOutScreen 0.5s ease-out forwards'
+            : 'fadeInScreen 0.4s ease-out',
+        }}>
           <div style={{ flex: 1 }} />
 
           <div style={{ textAlign: 'center' }}>
@@ -272,13 +323,6 @@ export default function ProblemPath() {
             )}
           </div>
 
-          {/* FIX 1: Pulsing dots (replaces progress bar) */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 20 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse1 1.2s ease-in-out infinite' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse2 1.2s ease-in-out infinite' }} />
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse3 1.2s ease-in-out infinite' }} />
-          </div>
-
           <div style={{ flex: 1.5 }} />
         </div>
       )}
@@ -288,7 +332,7 @@ export default function ProblemPath() {
         <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
           <div style={{ padding: '16px 20px' }}>
             <button
-              onClick={() => setScreen('intercept')}
+              onClick={() => { setInterceptFading(false); setScreen('intercept') }}
               style={{ width: 36, height: 36, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', fontFamily: '"DM Sans", system-ui', fontSize: 20, color: '#2C1A0E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ‹
@@ -297,23 +341,35 @@ export default function ProblemPath() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4 }}>เลือกที่ใกล้เคียงที่สุดครับ</div>
           </div>
 
-          {/* FIX 2: iOS settings list */}
-          <div style={{ background: 'white', borderRadius: 20, margin: '0 16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(44,26,14,0.06)', border: '1.5px solid rgba(44,26,14,0.06)', animation: 'categorySlide 0.3s ease-out' }}>
+          {/* CHANGE 2: 2-column illustrated card grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px' }}>
             {PROBLEM_CATEGORIES.map((cat, index) => (
               <div
                 key={cat.id}
-                className="cat-row"
+                className="cat-card"
                 onClick={() => { setCategory(cat.id); setScreen('detail') }}
-                style={{ display: 'flex', alignItems: 'center', padding: '15px 18px', cursor: 'pointer', transition: 'background 0.12s ease', position: 'relative', animation: 'categorySlide 0.3s ease-out both', animationDelay: `${index * 50}ms` }}
+                style={{
+                  borderRadius: 18,
+                  padding: '14px 12px 16px',
+                  cursor: 'pointer',
+                  border: `1.5px solid ${cat.stroke}`,
+                  background: cat.bg,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 130,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: 'cardScaleIn 0.3s ease-out both',
+                  animationDelay: `${index * 60}ms`,
+                  transition: 'transform 0.12s ease',
+                }}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: '#2C1A0E' }}>{cat.label}</div>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.45)', marginTop: 3 }}>{cat.sub}</div>
+                {/* Illustration placeholder */}
+                <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(44,26,14,0.06)', border: '1.5px dashed rgba(44,26,14,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 20, color: 'rgba(44,26,14,0.2)' }}>+</span>
                 </div>
-                <span style={{ fontFamily: '"DM Sans", system-ui', fontSize: 20, color: 'rgba(44,26,14,0.2)', flexShrink: 0 }}>›</span>
-                {index < PROBLEM_CATEGORIES.length - 1 && (
-                  <div style={{ position: 'absolute', bottom: 0, left: 18, right: 0, height: '0.5px', background: 'rgba(44,26,14,0.08)' }} />
-                )}
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E', lineHeight: 1.3, marginBottom: 4 }}>{cat.label}</div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', lineHeight: 1.5 }}>{cat.sub}</div>
               </div>
             ))}
           </div>
@@ -331,7 +387,7 @@ export default function ProblemPath() {
               <button
                 onClick={() => {
                   if (cardStep === 1) setScreen('category')
-                  else setCardStep((prev) => (prev - 1) as 1 | 2 | 3 | 4)
+                  else advanceCard((cardStep - 1) as 1 | 2 | 3 | 4)
                 }}
                 style={{ width: 36, height: 36, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', fontFamily: '"DM Sans", system-ui', fontSize: 20, color: '#2C1A0E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >
@@ -342,25 +398,32 @@ export default function ProblemPath() {
               </div>
             </div>
 
-            {/* FIX 3: Progress dots — variable width */}
-            <div style={{ marginTop: 12, marginBottom: 16, display: 'flex', gap: 5 }}>
-              {[1, 2, 3, 4].map((n) => (
-                <div
-                  key={n}
-                  style={{ height: 4, borderRadius: 2, background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)', width: n <= cardStep ? 20 : 10, transition: 'all 0.3s ease' }}
-                />
-              ))}
+            {/* CHANGE 3A: Character progress bar */}
+            <div style={{ marginTop: 8, marginBottom: 14, padding: '0 16px' }}>
+              <div style={{ position: 'relative', height: 32 }}>
+                {/* Track background */}
+                <div style={{ position: 'absolute', top: 24, left: 4, right: 4, height: 4, borderRadius: 2, background: 'rgba(44,26,14,0.1)' }} />
+                {/* Track fill */}
+                <div style={{ position: 'absolute', top: 24, left: 4, height: 4, borderRadius: 2, background: '#DC2626', width: TRACK_POSITIONS[cardStep], transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1)', animation: 'progressGlow 2s ease-in-out infinite' }} />
+                {/* Step dots */}
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    style={{ position: 'absolute', top: 20, left: TRACK_POSITIONS[n], transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)', transition: 'background 0.3s ease' }}
+                  />
+                ))}
+                {/* Character on track */}
+                <div style={{ position: 'absolute', top: 0, left: TRACK_POSITIONS[cardStep], transform: 'translateX(-50%)', transition: 'left 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
+                  <div style={{ width: 24, height: 24, animation: 'charWalk 0.6s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MascotBowl size={24} mood="happy" />
+                  </div>
+                  <div style={{ width: 16, height: 3, borderRadius: '50%', background: 'rgba(44,26,14,0.1)', margin: '0 auto', marginTop: -1 }} />
+                </div>
+              </div>
             </div>
           </div>
 
           <div style={{ paddingBottom: 32 }}>
-            {/* Mini character above card */}
-            <div style={{ textAlign: 'center', marginBottom: 10 }}>
-              <div style={{ display: 'inline-block', opacity: 0.7 }}>
-                <MascotBowl size={48} mood="bow" />
-              </div>
-            </div>
-
             {/* ── CARD 1: Platform ── */}
             {cardStep === 1 && (
               <div key={1} style={cardStyle}>
@@ -373,7 +436,7 @@ export default function ProblemPath() {
                       key={p}
                       onClick={() => {
                         setPlatform(p)
-                        setTimeout(() => setCardStep(2), 280)
+                        setTimeout(() => advanceCard(2), 280)
                       }}
                       style={{
                         width: 'calc(50% - 5px)',
@@ -420,7 +483,7 @@ export default function ProblemPath() {
                   style={warmInputStyle}
                 />
                 <button
-                  onClick={() => { if (phone.trim().length >= 9) setCardStep(3) }}
+                  onClick={() => { if (phone.trim().length >= 9) advanceCard(3) }}
                   disabled={phone.trim().length < 9}
                   style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
                 >
@@ -447,7 +510,7 @@ export default function ProblemPath() {
                   style={{ ...warmInputStyle, fontSize: 18 }}
                 />
                 <button
-                  onClick={() => { if (orderNumber.trim().length > 0) setCardStep(4) }}
+                  onClick={() => { if (orderNumber.trim().length > 0) advanceCard(4) }}
                   disabled={orderNumber.trim().length === 0}
                   style={orderNumber.trim().length > 0 ? nextBtnActive : nextBtnInactive}
                 >
@@ -459,18 +522,17 @@ export default function ProblemPath() {
             {/* ── CARD 4: Details (optional) ── */}
             {cardStep === 4 && (
               <div key={4} style={cardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
+                {/* CHANGE 4: title only, no sub label */}
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 14 }}>
                   มีอะไรอยากบอกเพิ่มไหมครับ?
                 </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.4)', marginTop: 4, marginBottom: 14 }}>
-                  ไม่บังคับครับ แต่ช่วยได้มาก
-                </div>
 
+                {/* CHANGE 4: updated placeholder */}
                 <textarea
                   className="detail-textarea"
                   value={problemText}
                   onChange={(e) => setProblemText(e.target.value)}
-                  placeholder="บอกได้เลยครับ ไม่ต้องกลัว"
+                  placeholder="เกิดอะไรขึ้นครับ?"
                   style={{ width: '100%', minHeight: 72, padding: '14px 16px', borderRadius: 16, border: 'none', background: '#F5F0EA', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
                 />
 
