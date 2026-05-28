@@ -5,12 +5,12 @@ import { MascotBowl } from '../components/Illustrations'
 import { supabase } from '../lib/supabase'
 
 const PROBLEM_CATEGORIES = [
-  { id: 'wrong_order',    label: 'Order ผิด / สลับ',    sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',         isCritical: false },
-  { id: 'missing_item',  label: 'ของขาด / ไม่ครบ',     sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',             isCritical: false },
-  { id: 'taste_issue',   label: 'รสชาติผิดปกติ',        sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',       isCritical: false },
-  { id: 'foreign_object',label: 'พบสิ่งแปลกปลอม',       sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',              isCritical: true  },
-  { id: 'undercooked',   label: 'อาหารไม่สุก',          sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',             isCritical: true  },
-  { id: 'other',         label: 'อื่นๆ',                sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',           isCritical: false },
+  { id: 'wrong_order',    label: 'Order ผิด / สลับ',    sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',       isCritical: false },
+  { id: 'missing_item',  label: 'ของขาด / ไม่ครบ',     sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',           isCritical: false },
+  { id: 'taste_issue',   label: 'รสชาติผิดปกติ',        sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',     isCritical: false },
+  { id: 'foreign_object',label: 'พบสิ่งแปลกปลอม',       sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',            isCritical: true  },
+  { id: 'undercooked',   label: 'อาหารไม่สุก',          sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',           isCritical: true  },
+  { id: 'other',         label: 'อื่นๆ',                sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',         isCritical: false },
 ]
 
 const PLATFORMS = ['Grab', 'LINE MAN', 'Shopee Food', 'หน้าร้าน']
@@ -36,14 +36,12 @@ export default function ProblemPath() {
     setIsNightTime(hour >= 22 || hour < 8)
   }, [])
 
-  // FIX 1: Auto-advance intercept after 2.5s
   useEffect(() => {
     if (screen !== 'intercept') return
     const timer = setTimeout(() => setScreen('category'), 2500)
     return () => clearTimeout(timer)
   }, [screen])
 
-  // Reset cardStep when entering detail screen
   useEffect(() => {
     if (screen === 'detail') setCardStep(1)
   }, [screen])
@@ -57,7 +55,6 @@ export default function ProblemPath() {
     try {
       const isCritical = ['foreign_object', 'undercooked'].includes(category)
 
-      // FIX 4: Telegram first (with photo if present), then DB
       const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
       if (botToken) {
         const catLabels: Record<string, string> = {
@@ -126,54 +123,54 @@ export default function ProblemPath() {
 
   const selectedCat = PROBLEM_CATEGORIES.find((c) => c.id === category)
 
-  const sharedCardStyle: React.CSSProperties = {
+  const cardStyle: React.CSSProperties = {
     background: 'white',
-    borderRadius: 20,
-    padding: 20,
-    margin: '0 16px',
-    boxShadow: '0 4px 20px rgba(44,26,14,0.06)',
-    border: '1.5px solid rgba(44,26,14,0.06)',
-    animation: 'cardSlide 0.3s ease-out',
+    borderRadius: 24,
+    margin: '0 12px',
+    padding: '22px 20px',
+    boxShadow: '0 6px 24px rgba(44,26,14,0.08)',
+    animation: 'cardEntrance 0.35s cubic-bezier(0.22,1,0.36,1) both',
   }
 
-  const inputStyle: React.CSSProperties = {
+  const warmInputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '14px 16px',
-    borderRadius: 14,
-    border: '1.5px solid rgba(44,26,14,0.1)',
+    padding: '16px 18px',
+    borderRadius: 16,
+    border: 'none',
     fontFamily: '"Sarabun", system-ui',
-    fontSize: 22,
-    fontWeight: 500,
+    fontSize: 24,
+    fontWeight: 600,
     color: '#2C1A0E',
     outline: 'none',
     boxSizing: 'border-box',
-    background: 'white',
+    background: '#F5F0EA',
+    letterSpacing: '0.5px',
   }
 
   const nextBtnActive: React.CSSProperties = {
     width: '100%',
-    padding: 14,
+    padding: 15,
     borderRadius: 50,
     border: 'none',
     background: '#DC2626',
     color: 'white',
     fontFamily: '"Sarabun", system-ui',
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 16,
     cursor: 'pointer',
     marginTop: 14,
   }
 
   const nextBtnInactive: React.CSSProperties = {
     width: '100%',
-    padding: 14,
+    padding: 15,
     borderRadius: 50,
     border: 'none',
     background: 'rgba(44,26,14,0.07)',
     color: 'rgba(44,26,14,0.3)',
     fontFamily: '"Sarabun", system-ui',
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 16,
     cursor: 'not-allowed',
     marginTop: 14,
   }
@@ -193,10 +190,6 @@ export default function ProblemPath() {
           from { opacity:0; transform:translateX(16px); }
           to { opacity:1; transform:translateX(0); }
         }
-        @keyframes grow {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
         @keyframes cardSlide {
           from { opacity:0; transform:translateX(20px); }
           to { opacity:1; transform:translateX(0); }
@@ -207,13 +200,38 @@ export default function ProblemPath() {
           70% { transform: scale(1.05); }
           100% { transform: scale(1); }
         }
-        .phone-input:focus {
-          border-color: rgba(220,38,38,0.4) !important;
+        @keyframes dotPulse1 {
+          0%,100% { transform: scale(1); opacity: 0.3; }
+          33% { transform: scale(1.5); opacity: 1; }
+        }
+        @keyframes dotPulse2 {
+          0%,100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.5); opacity: 1; }
+        }
+        @keyframes dotPulse3 {
+          0%,100% { transform: scale(1); opacity: 0.3; }
+          66% { transform: scale(1.5); opacity: 1; }
+        }
+        @keyframes categorySlide {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes cardEntrance {
+          from { opacity: 0; transform: translateY(16px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .warm-input:focus {
+          background: white !important;
+          box-shadow: 0 0 0 2px rgba(220,38,38,0.25);
           outline: none;
         }
         .detail-textarea:focus {
-          border-color: rgba(220,38,38,0.3) !important;
+          background: white !important;
+          box-shadow: 0 0 0 2px rgba(220,38,38,0.2);
           outline: none;
+        }
+        .cat-row:active {
+          background: rgba(44,26,14,0.04);
         }
       `}</style>
 
@@ -254,9 +272,11 @@ export default function ProblemPath() {
             )}
           </div>
 
-          {/* FIX 1: Progress bar */}
-          <div style={{ width: 120, height: 3, background: 'rgba(44,26,14,0.1)', borderRadius: 2, margin: '16px auto 0', overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 2, background: '#DC2626', animation: 'grow 2.5s linear forwards' }} />
+          {/* FIX 1: Pulsing dots (replaces progress bar) */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 20 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse1 1.2s ease-in-out infinite' }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse2 1.2s ease-in-out infinite' }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626', animation: 'dotPulse3 1.2s ease-in-out infinite' }} />
           </div>
 
           <div style={{ flex: 1.5 }} />
@@ -277,19 +297,23 @@ export default function ProblemPath() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4 }}>เลือกที่ใกล้เคียงที่สุดครับ</div>
           </div>
 
-          {/* FIX 2: All cards same style, no badges, no red color */}
-          <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {PROBLEM_CATEGORIES.map((cat) => (
+          {/* FIX 2: iOS settings list */}
+          <div style={{ background: 'white', borderRadius: 20, margin: '0 16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(44,26,14,0.06)', border: '1.5px solid rgba(44,26,14,0.06)', animation: 'categorySlide 0.3s ease-out' }}>
+            {PROBLEM_CATEGORIES.map((cat, index) => (
               <div
                 key={cat.id}
+                className="cat-row"
                 onClick={() => { setCategory(cat.id); setScreen('detail') }}
-                style={{ background: 'white', borderRadius: 16, padding: '14px 16px', border: '1.5px solid rgba(44,26,14,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', padding: '15px 18px', cursor: 'pointer', transition: 'background 0.12s ease', position: 'relative', animation: 'categorySlide 0.3s ease-out both', animationDelay: `${index * 50}ms` }}
               >
-                <div>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E' }}>{cat.label}</div>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginTop: 3 }}>{cat.sub}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: '#2C1A0E' }}>{cat.label}</div>
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.45)', marginTop: 3 }}>{cat.sub}</div>
                 </div>
-                <span style={{ fontFamily: '"DM Sans", system-ui', fontSize: 20, color: 'rgba(44,26,14,0.2)' }}>›</span>
+                <span style={{ fontFamily: '"DM Sans", system-ui', fontSize: 20, color: 'rgba(44,26,14,0.2)', flexShrink: 0 }}>›</span>
+                {index < PROBLEM_CATEGORIES.length - 1 && (
+                  <div style={{ position: 'absolute', bottom: 0, left: 18, right: 0, height: '0.5px', background: 'rgba(44,26,14,0.08)' }} />
+                )}
               </div>
             ))}
           </div>
@@ -303,7 +327,6 @@ export default function ProblemPath() {
         <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           {/* Sticky header */}
           <div style={{ padding: '16px 20px 0', position: 'sticky', top: 0, background: 'rgba(250,243,232,0.95)', backdropFilter: 'blur(8px)', zIndex: 10 }}>
-            {/* FIX 5: Back button navigates card step */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
               <button
                 onClick={() => {
@@ -319,25 +342,32 @@ export default function ProblemPath() {
               </div>
             </div>
 
-            {/* Progress dots */}
-            <div style={{ marginTop: 12, marginBottom: 16, padding: '0 0', display: 'flex', gap: 6 }}>
+            {/* FIX 3: Progress dots — variable width */}
+            <div style={{ marginTop: 12, marginBottom: 16, display: 'flex', gap: 5 }}>
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  style={{ width: 20, height: 4, borderRadius: 2, background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.12)', transition: 'background 0.3s ease' }}
+                  style={{ height: 4, borderRadius: 2, background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)', width: n <= cardStep ? 20 : 10, transition: 'all 0.3s ease' }}
                 />
               ))}
             </div>
           </div>
 
           <div style={{ paddingBottom: 32 }}>
+            {/* Mini character above card */}
+            <div style={{ textAlign: 'center', marginBottom: 10 }}>
+              <div style={{ display: 'inline-block', opacity: 0.7 }}>
+                <MascotBowl size={48} mood="bow" />
+              </div>
+            </div>
+
             {/* ── CARD 1: Platform ── */}
             {cardStep === 1 && (
-              <div key={1} style={sharedCardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 18, color: '#2C1A0E', marginBottom: 16 }}>
+              <div key={1} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 16 }}>
                   สั่งผ่านช่องทางไหนครับ?
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                   {PLATFORMS.map((p) => (
                     <button
                       key={p}
@@ -346,10 +376,13 @@ export default function ProblemPath() {
                         setTimeout(() => setCardStep(2), 280)
                       }}
                       style={{
-                        padding: 14,
-                        borderRadius: 14,
+                        width: 'calc(50% - 5px)',
+                        padding: '14px 16px',
+                        borderRadius: 16,
                         cursor: 'pointer',
-                        textAlign: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         fontFamily: '"Sarabun", system-ui',
                         fontWeight: 700,
                         fontSize: 15,
@@ -359,6 +392,7 @@ export default function ProblemPath() {
                         transform: platform === p ? 'scale(0.97)' : 'scale(1)',
                         transition: 'all 0.15s ease',
                         animation: platform === p ? 'platformPop 0.3s ease-out' : undefined,
+                        boxSizing: 'border-box',
                       }}
                     >
                       {p}
@@ -370,20 +404,20 @@ export default function ProblemPath() {
 
             {/* ── CARD 2: Phone ── */}
             {cardStep === 2 && (
-              <div key={2} style={sharedCardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 18, color: '#2C1A0E' }}>
+              <div key={2} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
                   เบอร์ติดต่อครับ
                 </div>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
                   ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
                 </div>
                 <input
-                  className="phone-input"
+                  className="warm-input"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="08X-XXX-XXXX"
-                  style={inputStyle}
+                  style={warmInputStyle}
                 />
                 <button
                   onClick={() => { if (phone.trim().length >= 9) setCardStep(3) }}
@@ -397,23 +431,20 @@ export default function ProblemPath() {
 
             {/* ── CARD 3: Order Number ── */}
             {cardStep === 3 && (
-              <div key={3} style={sharedCardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 18, color: '#2C1A0E', marginBottom: 8 }}>
+              <div key={3} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 8 }}>
                   หมายเลข Order ครับ
                 </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 4 }}>
-                  💡 ช่วยให้ทีมงานเช็คได้ก่อนโทร แก้ได้เร็วขึ้นมากครับ
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 11, color: 'rgba(44,26,14,0.3)', marginBottom: 12 }}>
-                  หาได้ใน app ที่สั่งครับ เช่น #GF-XXXXXXX
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 12 }}>
+                  💡 ช่วยให้ทีมงานเช็คก่อนโทร แก้ได้เร็วกว่าครับ
                 </div>
                 <input
-                  className="phone-input"
+                  className="warm-input"
                   type="text"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   placeholder="#GF-12345 หรือ LM-98765"
-                  style={{ ...inputStyle, fontSize: 18 }}
+                  style={{ ...warmInputStyle, fontSize: 18 }}
                 />
                 <button
                   onClick={() => { if (orderNumber.trim().length > 0) setCardStep(4) }}
@@ -427,8 +458,8 @@ export default function ProblemPath() {
 
             {/* ── CARD 4: Details (optional) ── */}
             {cardStep === 4 && (
-              <div key={4} style={sharedCardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 18, color: '#2C1A0E' }}>
+              <div key={4} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
                   มีอะไรอยากบอกเพิ่มไหมครับ?
                 </div>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.4)', marginTop: 4, marginBottom: 14 }}>
@@ -440,7 +471,7 @@ export default function ProblemPath() {
                   value={problemText}
                   onChange={(e) => setProblemText(e.target.value)}
                   placeholder="บอกได้เลยครับ ไม่ต้องกลัว"
-                  style={{ width: '100%', minHeight: 80, padding: '12px 14px', borderRadius: 14, border: '1.5px solid rgba(44,26,14,0.08)', background: '#FAF3E8', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', minHeight: 72, padding: '14px 16px', borderRadius: 16, border: 'none', background: '#F5F0EA', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
                 />
 
                 {/* Photo upload */}
@@ -450,13 +481,13 @@ export default function ProblemPath() {
                   </div>
                   {!imagePreview ? (
                     <>
-                      <div
+                      <button
                         onClick={() => fileInputRef.current?.click()}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, background: '#F5F0EA', cursor: 'pointer', border: '1px solid rgba(44,26,14,0.1)' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: '#F5F0EA', cursor: 'pointer', border: 'none' }}
                       >
                         <span>📷</span>
-                        <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: '#2C1A0E' }}>เลือกรูปภาพครับ</span>
-                      </div>
+                        <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E' }}>เลือกรูปภาพครับ</span>
+                      </button>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -472,19 +503,36 @@ export default function ProblemPath() {
                       />
                     </>
                   ) : (
-                    <div>
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setImageFile(file)
+                          setImagePreview(URL.createObjectURL(file))
+                        }}
+                      />
                       <img
                         src={imagePreview}
                         alt="preview"
                         style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 12, marginTop: 8, display: 'block' }}
                       />
                       <div
-                        onClick={() => { setImageFile(null); setImagePreview('') }}
-                        style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: '#DC2626', cursor: 'pointer', marginTop: 6 }}
+                        onClick={() => {
+                          setImageFile(null)
+                          setImagePreview('')
+                          setTimeout(() => fileInputRef.current?.click(), 50)
+                        }}
+                        style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.5)', cursor: 'pointer', marginTop: 6 }}
                       >
-                        ลบรูปนี้ออกครับ
+                        เลือกรูปใหม่
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
 
@@ -507,7 +555,7 @@ export default function ProblemPath() {
                   {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงานด่วนครับ 🚨'}
                 </button>
 
-                {/* Skip link */}
+                {/* Skip */}
                 <div style={{ marginTop: 10, textAlign: 'center' }}>
                   <span
                     onClick={handleSubmit}
