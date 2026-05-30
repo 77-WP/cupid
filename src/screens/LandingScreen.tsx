@@ -346,26 +346,13 @@ export default function LandingScreen() {
         <div style={{ flex: 1 }} />
 
         {/* ── SOCIAL PROOF ── */}
-        <div style={{ padding: '16px 16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <div style={{ display: 'flex' }}>
-            {[C.orange, C.amber, '#D9482A', C.brownSoft].map((c, i) => (
-              <div key={i} style={{
-                width: 22, height: 22, borderRadius: 11,
-                background: c, border: '2px solid rgba(245,237,216,1)',
-                marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontFamily: '"DM Sans", system-ui',
-                fontWeight: 700, fontSize: 8,
-              }}>
-                {['ป', 'น', 'ต', '+'][i]}
-              </div>
-            ))}
-          </div>
-          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>
-            {feedbackCount != null
-              ? <><span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>{feedbackCount.toLocaleString()}</span> คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</>
-              : <span style={{ color: 'rgba(44,26,14,0.35)' }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</span>
-            }
+        <div style={{ padding: '16px 16px 20px', textAlign: 'center' }}>
+          <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>
+            {feedbackCount != null ? (
+              <>❤️ <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>{feedbackCount.toLocaleString()}</span> คนให้กำลังใจทีมงานเราเดือนนี้</>
+            ) : (
+              <span style={{ color: 'rgba(44,26,14,0.35)' }}>❤️ คนให้กำลังใจทีมงานเราเดือนนี้</span>
+            )}
           </div>
         </div>
 
