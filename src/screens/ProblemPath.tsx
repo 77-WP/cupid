@@ -14,20 +14,31 @@ const PROBLEM_CATEGORIES = [
   { id: 'other',         emoji: '💬', label: 'อื่นๆ',              sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',       isCritical: false, bg: '#F5F0EA', stroke: 'rgba(44,26,14,0.15)' },
 ]
 
-const PLATFORMS = ['Grab', 'LINE MAN', 'Shopee Food', 'หน้าร้าน']
+const PLATFORMS = [
+  { label: 'Grab',              value: 'grab'    },
+  { label: 'LINE MAN',          value: 'lineman' },
+  { label: 'Shopee Food',       value: 'shopee'  },
+  { label: 'Walk-in / หน้าร้าน', value: 'walkin'  },
+]
 
 const PLATFORM_BRAND: Record<string, string> = {
-  'Grab':        '#00B14F',
-  'LINE MAN':    '#06C755',
-  'Shopee Food': '#EE4D2D',
-  'หน้าร้าน':    '#5C3B22',
+  grab:    '#00B14F',
+  lineman: '#06C755',
+  shopee:  '#EE4D2D',
+  walkin:  '#5C3B22',
+}
+
+const PLATFORM_LABEL: Record<string, string> = {
+  grab:    'Grab',
+  lineman: 'LINE MAN',
+  shopee:  'Shopee Food',
+  walkin:  'Walk-in / หน้าร้าน',
 }
 
 const TRACK_POSITIONS: Record<number, string> = {
-  1: '12.5%',
-  2: '37.5%',
-  3: '62.5%',
-  4: '87.5%',
+  1: '16.67%',
+  2: '50%',
+  3: '83.33%',
 }
 
 export default function ProblemPath() {
@@ -45,7 +56,7 @@ export default function ProblemPath() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNightTime, setIsNightTime] = useState(false)
-  const [cardStep, setCardStep] = useState<1 | 2 | 3 | 4>(1)
+  const [cardStep, setCardStep] = useState<1 | 2 | 3>(1)
   const [cardExiting, setCardExiting] = useState(false)
 
   useEffect(() => {
@@ -53,7 +64,6 @@ export default function ProblemPath() {
     setIsNightTime(hour >= 22 || hour < 8)
   }, [])
 
-  // CHANGE 1: fade intercept then switch
   useEffect(() => {
     if (screen !== 'intercept') return
     const fadeTimer = setTimeout(() => {
@@ -73,10 +83,11 @@ export default function ProblemPath() {
     if (screen === 'detail') setCardStep(1)
   }, [screen])
 
-  const canSubmit = platform !== '' && phone.trim().length >= 9 && orderNumber.trim().length > 0
+  const isWalkIn = platform === 'walkin'
+  const canSubmit = platform !== '' && phone.trim().length >= 9 && (isWalkIn || orderNumber.trim().length > 0)
+  const deliveryCard2Ready = orderNumber.trim().length > 0 && phone.trim().length >= 9
 
-  // CHANGE 3B: card exit/enter animation helper
-  const advanceCard = (nextStep: 1 | 2 | 3 | 4) => {
+  const advanceCard = (nextStep: 1 | 2 | 3) => {
     setCardExiting(true)
     setTimeout(() => {
       setCardExiting(false)
@@ -104,7 +115,9 @@ export default function ProblemPath() {
         const timeStr = new Date().toLocaleTimeString('th-TH', {
           hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok',
         })
-        const msg = `🚨 PROBLEM REPORT — Best Part Cupid\n\nCategory: ${catLabels[category] || category}\nPlatform: ${platform}\nOrder: ${orderNumber.trim()}\nเบอร์: ${phone.trim()}\nข้อความ: ${problemText || '(ไม่มี)'}\n${isCritical ? '\n⚠️ CRITICAL — ต้องโทรกลับภายใน 15 นาที' : '\n⚡ ต้องโทรกลับภายใน 15-20 นาที'}\n\nเวลา: ${timeStr} น.`
+        const platformDisplay = PLATFORM_LABEL[platform] || platform
+        const orderDisplay = isWalkIn ? '(Walk-in)' : orderNumber.trim()
+        const msg = `🚨 PROBLEM REPORT — Best Part Cupid\n\nCategory: ${catLabels[category] || category}\nPlatform: ${platformDisplay}\nOrder: ${orderDisplay}\nเบอร์: ${phone.trim()}\nข้อความ: ${problemText || '(ไม่มี)'}\n${isCritical ? '\n⚠️ CRITICAL — ต้องโทรกลับภายใน 15 นาที' : '\n⚡ ต้องโทรกลับภายใน 15-20 นาที'}\n\nเวลา: ${timeStr} น.`
 
         try {
           if (imageFile) {
@@ -132,11 +145,11 @@ export default function ProblemPath() {
         .from('cupid_feedback')
         .insert({
           mood: 'problem',
-          source: platform.toLowerCase().replace(' ', '_'),
+          source: platform,
           category: category,
           text: problemText || '',
           phone: phone.trim(),
-          order_number: orderNumber.trim(),
+          order_number: isWalkIn ? '' : orderNumber.trim(),
           is_critical: isCritical,
           wow_followup_needed: isCritical,
         })
@@ -349,7 +362,6 @@ export default function ProblemPath() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4 }}>เลือกที่ใกล้เคียงที่สุดครับ</div>
           </div>
 
-          {/* CHANGE 2: 2-column illustrated card grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px' }}>
             {PROBLEM_CATEGORIES.map((cat, index) => (
               <div
@@ -394,7 +406,7 @@ export default function ProblemPath() {
               <button
                 onClick={() => {
                   if (cardStep === 1) setScreen('category')
-                  else advanceCard((cardStep - 1) as 1 | 2 | 3 | 4)
+                  else advanceCard((cardStep - 1) as 1 | 2 | 3)
                 }}
                 style={{ width: 36, height: 36, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', fontFamily: '"DM Sans", system-ui', fontSize: 20, color: '#2C1A0E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >
@@ -405,7 +417,7 @@ export default function ProblemPath() {
               </div>
             </div>
 
-            {/* CHANGE 3A: Character progress bar */}
+            {/* Character progress bar */}
             <div style={{ marginTop: 8, marginBottom: 14, padding: '0 16px' }}>
               <div style={{ position: 'relative', height: 32 }}>
                 {/* Track background */}
@@ -413,7 +425,7 @@ export default function ProblemPath() {
                 {/* Track fill */}
                 <div style={{ position: 'absolute', top: 24, left: 4, height: 4, borderRadius: 2, background: '#DC2626', width: TRACK_POSITIONS[cardStep], transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1)', animation: 'progressGlow 2s ease-in-out infinite' }} />
                 {/* Step dots */}
-                {[1, 2, 3, 4].map((n) => (
+                {[1, 2, 3].map((n) => (
                   <div
                     key={n}
                     style={{ position: 'absolute', top: 20, left: TRACK_POSITIONS[n], transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)', transition: 'background 0.3s ease' }}
@@ -438,14 +450,14 @@ export default function ProblemPath() {
                   สั่งผ่านช่องทางไหนครับ?
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {PLATFORMS.map((p) => {
-                    const brand = PLATFORM_BRAND[p] ?? '#2C1A0E'
-                    const selected = platform === p
+                  {PLATFORMS.map(({ label, value }) => {
+                    const brand = PLATFORM_BRAND[value] ?? '#2C1A0E'
+                    const selected = platform === value
                     return (
                       <button
-                        key={p}
+                        key={value}
                         onClick={() => {
-                          setPlatform(p)
+                          setPlatform(value)
                           setTimeout(() => advanceCard(2), 280)
                         }}
                         style={{
@@ -468,7 +480,7 @@ export default function ProblemPath() {
                           boxSizing: 'border-box',
                         }}
                       >
-                        {p}
+                        {label}
                       </button>
                     )
                   })}
@@ -476,69 +488,79 @@ export default function ProblemPath() {
               </div>
             )}
 
-            {/* ── CARD 2: Order Number ── */}
+            {/* ── CARD 2: Contact info (conditional: walk-in = phone only, delivery = order + phone) ── */}
             {cardStep === 2 && (
               <div key={2} style={cardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 8 }}>
-                  หมายเลข Order ครับ
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 12 }}>
-                  💡 ช่วยให้ทีมงานเช็คก่อนโทร แก้ได้เร็วกว่าครับ
-                </div>
-                <input
-                  className="warm-input"
-                  type="text"
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="#GF-12345 หรือ LM-98765"
-                  style={{ ...warmInputStyle, fontSize: 18 }}
-                />
-                <button
-                  onClick={() => { if (orderNumber.trim().length > 0) advanceCard(3) }}
-                  disabled={orderNumber.trim().length === 0}
-                  style={orderNumber.trim().length > 0 ? nextBtnActive : nextBtnInactive}
-                >
-                  {orderNumber.trim().length > 0 ? 'ต่อไปครับ →' : 'กรุณากรอก Order Number ครับ'}
-                </button>
+                {isWalkIn ? (
+                  <>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
+                      เบอร์โทรติดต่อกลับครับ
+                    </div>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
+                      ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
+                    </div>
+                    <input
+                      className="warm-input"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="0812345678"
+                      style={warmInputStyle}
+                    />
+                    <button
+                      onClick={() => { if (phone.trim().length >= 9) advanceCard(3) }}
+                      disabled={phone.trim().length < 9}
+                      style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
+                    >
+                      {phone.trim().length >= 9 ? 'ต่อไปครับ →' : 'กรุณากรอกเบอร์ครับ'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 4 }}>
+                      เลขออเดอร์ครับ
+                    </div>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 12 }}>
+                      💡 ช่วยให้ทีมงานเช็คก่อนโทร แก้ได้เร็วกว่าครับ
+                    </div>
+                    <input
+                      className="warm-input"
+                      type="text"
+                      value={orderNumber}
+                      onChange={(e) => setOrderNumber(e.target.value)}
+                      placeholder="เช่น GF-12345678"
+                      style={{ ...warmInputStyle, fontSize: 18 }}
+                    />
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: '#2C1A0E', marginTop: 20, marginBottom: 4 }}>
+                      เบอร์โทรติดต่อกลับ
+                    </div>
+                    <input
+                      className="warm-input"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="0812345678"
+                      style={warmInputStyle}
+                    />
+                    <button
+                      onClick={() => { if (deliveryCard2Ready) advanceCard(3) }}
+                      disabled={!deliveryCard2Ready}
+                      style={deliveryCard2Ready ? nextBtnActive : nextBtnInactive}
+                    >
+                      {deliveryCard2Ready ? 'ต่อไปครับ →' : 'กรุณากรอกข้อมูลให้ครบครับ'}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
-            {/* ── CARD 3: Phone ── */}
+            {/* ── CARD 3: Details (optional) + Submit ── */}
             {cardStep === 3 && (
               <div key={3} style={cardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
-                  เบอร์ติดต่อครับ
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
-                  ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
-                </div>
-                <input
-                  className="warm-input"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="08X-XXX-XXXX"
-                  style={warmInputStyle}
-                />
-                <button
-                  onClick={() => { if (phone.trim().length >= 9) advanceCard(4) }}
-                  disabled={phone.trim().length < 9}
-                  style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
-                >
-                  {phone.trim().length >= 9 ? 'ต่อไปครับ →' : 'กรุณากรอกเบอร์ครับ'}
-                </button>
-              </div>
-            )}
-
-            {/* ── CARD 4: Details (optional) ── */}
-            {cardStep === 4 && (
-              <div key={4} style={cardStyle}>
-                {/* CHANGE 4: title only, no sub label */}
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 14 }}>
                   มีอะไรอยากบอกเพิ่มไหมครับ?
                 </div>
 
-                {/* CHANGE 4: updated placeholder */}
                 <textarea
                   className="detail-textarea"
                   value={problemText}
