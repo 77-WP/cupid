@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { BackBtn, C } from '../components/SharedUI'
+import { BackBtn } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
 
 interface TimelineItem {
@@ -55,6 +55,10 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
         @keyframes heroReveal { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes dotPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes stagePulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(232,98,42,0.4); }
+          50%      { box-shadow: 0 0 0 6px rgba(232,98,42,0); }
+        }
       `}</style>
 
       {/* A) HEADER BAR */}
@@ -130,7 +134,63 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
           </div>
         )}
 
-        {/* D) TIMELINE SECTION */}
+        {/* D) STAGE PROGRESS BAR */}
+        {(() => {
+          const STAGES = ['รับเรื่อง', 'กำลังดำเนินการ', 'เสร็จแล้ว']
+          const activeIdx = entry.status === 'response' ? 0 : entry.status === 'in-progress' ? 1 : 2
+          const originalTimeline = entry.timeline || []
+          const stagePcts = ['16.67%', '50%', '83.33%']
+          return (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: '#2C1A0E', marginBottom: 16 }}>
+                ขั้นตอนการดำเนินการ
+              </div>
+              <div style={{ position: 'relative', height: 56, margin: '0 8px' }}>
+                {/* Track background */}
+                <div style={{ position: 'absolute', top: 10, left: 0, right: 0, height: 3, borderRadius: 2, background: 'rgba(44,26,14,0.1)' }} />
+                {/* Track fill */}
+                <div style={{
+                  position: 'absolute', top: 10, left: 0, height: 3, borderRadius: 2,
+                  background: 'linear-gradient(90deg, #E8622A, #DC2626)',
+                  width: stagePcts[activeIdx],
+                  transition: 'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+                }} />
+                {/* Stage dots + labels */}
+                {STAGES.map((label, i) => {
+                  const isActive = i === activeIdx
+                  const isCompleted = i < activeIdx
+                  const isDone = isActive || isCompleted
+                  const stageDate = originalTimeline[i]?.date
+                  return (
+                    <div key={i} style={{ position: 'absolute', left: stagePcts[i], transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{
+                        width: isActive ? 16 : 12,
+                        height: isActive ? 16 : 12,
+                        borderRadius: '50%',
+                        background: isDone ? '#E8622A' : 'transparent',
+                        border: isDone ? 'none' : '2px solid rgba(44,26,14,0.2)',
+                        transition: 'all 0.3s ease',
+                        animation: isActive ? 'stagePulse 1.8s ease-in-out infinite, dotPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' : isCompleted ? 'dotPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+                        animationDelay: `${i * 100}ms`,
+                        marginTop: isActive ? -2 : 0,
+                      }} />
+                      <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 10, color: isDone ? '#E8622A' : 'rgba(44,26,14,0.35)', fontWeight: isDone ? 700 : 400, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </div>
+                      {isDone && stageDate && (
+                        <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 9, color: 'rgba(44,26,14,0.4)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          {stageDate}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* E) TIMELINE SECTION */}
         {timeline.length > 0 && (
           <div>
             <div style={{
@@ -172,16 +232,15 @@ function ArticleView({ entry, onBack }: { entry: JoeEntry; onBack: () => void })
 }
 
 const FILTERS = [
-  { label: 'ทั้งหมด',    value: 'all' },
-  { label: '⏳ กำลังทำ', value: 'in-progress' },
+  { label: '🌟 ทั้งหมด',    value: 'all' },
+  { label: '⏳ กำลังทำ',   value: 'in-progress' },
   { label: '✅ เสร็จแล้ว', value: 'done' },
-  { label: '💬 รับทราบ', value: 'response' },
+  { label: '💬 รับทราบ',   value: 'response' },
 ]
 
 export default function JoeMode() {
   const navigate = useNavigate()
   const [entries, setEntries] = useState<JoeEntry[]>([])
-  const [annOpen, setAnnOpen] = useState(false)
   const [articleId, setArticleId] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
@@ -331,25 +390,6 @@ export default function JoeMode() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* ANNOUNCEMENT BANNER */}
-        <div style={{ padding: '16px 16px 0' }}>
-          <div style={{ padding: 14, borderRadius: 18, background: 'linear-gradient(135deg, #FFF1E2, #FAE0CB)', border: `1.5px dashed ${C.orange}`, marginBottom: 16 }}>
-            <button onClick={() => setAnnOpen((x) => !x)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
-              <div style={{ fontSize: 20 }}>📣</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: '"DM Sans", system-ui', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: C.brownSoft }}>Announcement · Cupid Report</div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 2 }}>เปิดสาขาใหม่ที่อารีย์ มิ.ย. นี้!</div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={C.brown} strokeWidth="2.4" strokeLinecap="round" style={{ transform: annOpen ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform .2s ease' }}><path d="M5 2l5 5-5 5"/></svg>
-            </button>
-            {annOpen && (
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(44,26,14,0.2)', fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brown, lineHeight: 1.5 }}>
-                ขอบคุณทุกคนที่โหวต — สาขาใหม่จะเปิด 12 มิถุนายน ที่อารีย์ ซอย 4 คุณที่โหวต A จะได้ส่วนลด 100.- ในวีคแรกครับ 🙏
-              </div>
-            )}
-          </div>
         </div>
 
       </div>
