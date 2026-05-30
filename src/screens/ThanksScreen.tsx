@@ -24,7 +24,8 @@ interface MenuItemDB {
   display_order: number
 }
 
-interface QAQuestion {
+interface WeeklyQuestion {
+  id: string
   question: string
   options: string[]
 }
@@ -37,9 +38,6 @@ interface CupidSettings {
   announcement_vote_options: string[] | null
   announcement_priority: string | null
   qa_is_active: boolean
-  weekly_question: string | null
-  weekly_question_options: string[] | null
-  weekly_questions: QAQuestion[] | null
   qa_priority: string | null
 }
 
@@ -273,6 +271,7 @@ export default function ThanksScreen() {
   const [qaIndex, setQaIndex] = useState(0)
   const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({})
   const [qaTouchStartX, setQaTouchStartX] = useState<number | null>(null)
+  const [weeklyQuestions, setWeeklyQuestions] = useState<WeeklyQuestion[]>([])
   const { banners, loading: bannersLoading } = useBanners('thanks')
 
   useEffect(() => {
@@ -304,13 +303,17 @@ export default function ThanksScreen() {
       if (data) setJoeItems(data)
     }
     fetchJoe()
-  }, [])
 
-  const qaQuestions: QAQuestion[] = (() => {
-    if (settings?.weekly_questions?.length) return settings.weekly_questions.slice(0, 3)
-    if (settings?.weekly_question) return [{ question: settings.weekly_question, options: settings.weekly_question_options || [] }]
-    return []
-  })()
+    supabase
+      .from('cupid_weekly_questions')
+      .select('id, question, options')
+      .eq('is_active', true)
+      .order('sort_order')
+      .limit(3)
+      .then(({ data }) => {
+        if (data) setWeeklyQuestions(data as WeeklyQuestion[])
+      })
+  }, [])
 
   const handleQaAnswer = (ans: string, idx: number) => {
     if (qaAnswers[idx] !== undefined) return
@@ -321,8 +324,8 @@ export default function ThanksScreen() {
         supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
       }
     }
-    if (idx < qaQuestions.length - 1) {
-      setTimeout(() => setQaIndex(idx + 1), 2000)
+    if (idx < weeklyQuestions.length - 1) {
+      setTimeout(() => setQaIndex(idx + 1), 1500)
     }
   }
 
@@ -563,7 +566,7 @@ export default function ThanksScreen() {
           </div>
 
           {/* Card B — Weekly Q&A carousel or placeholder */}
-          {settings?.qa_is_active && qaQuestions.length > 0 ? (
+          {settings?.qa_is_active && weeklyQuestions.length > 0 ? (
             <div
               style={{
                 background: 'white',
@@ -577,7 +580,7 @@ export default function ThanksScreen() {
               onTouchEnd={(e) => {
                 if (qaTouchStartX === null) return
                 const diff = qaTouchStartX - e.changedTouches[0].clientX
-                if (diff > 30 && qaIndex < qaQuestions.length - 1) setQaIndex(p => p + 1)
+                if (diff > 30 && qaIndex < weeklyQuestions.length - 1) setQaIndex(p => p + 1)
                 if (diff < -30 && qaIndex > 0) setQaIndex(p => p - 1)
                 setQaTouchStartX(null)
               }}
@@ -595,7 +598,7 @@ export default function ThanksScreen() {
 
               {/* Animated question content */}
               {(() => {
-                const q = qaQuestions[qaIndex]
+                const q = weeklyQuestions[qaIndex]
                 const answered = qaAnswers[qaIndex]
                 return (
                   <div key={qaIndex} style={{ flex: 1, animation: 'slideLeft 0.25s ease-out' }}>
@@ -635,9 +638,9 @@ export default function ThanksScreen() {
               })()}
 
               {/* Dot indicators — only if multiple questions */}
-              {qaQuestions.length > 1 && (
+              {weeklyQuestions.length > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 10 }}>
-                  {qaQuestions.map((_, i) => (
+                  {weeklyQuestions.map((_, i) => (
                     <div
                       key={i}
                       onClick={() => setQaIndex(i)}
