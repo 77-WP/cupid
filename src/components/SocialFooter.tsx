@@ -7,12 +7,21 @@ const SOCIAL_LINKS = [
   { icon: '📷', label: 'Instagram', href: '#' },
 ]
 
+const BRAND_COLORS = ['#E8622A', '#F5A623', '#2C1A0E', '#7CB342', '#1565C0']
+const DEFAULT_INITIALS = ['ป', 'น', 'ต', 'ก']
+const MAX_SHOWN = 4
+
 interface SocialFooterProps {
   feedbackCount?: number | null
   hideCTA?: boolean
+  supporters?: string[]
 }
 
-export default function SocialFooter({ feedbackCount, hideCTA }: SocialFooterProps) {
+export default function SocialFooter({ feedbackCount, hideCTA, supporters }: SocialFooterProps) {
+  const initials = supporters && supporters.length > 0 ? supporters : DEFAULT_INITIALS
+  const displayInitials = initials.slice(0, MAX_SHOWN)
+  const overflowCount = feedbackCount != null ? Math.max(0, feedbackCount - MAX_SHOWN) : null
+
   return (
     <div style={{
       padding: '14px 16px 20px', display: 'flex', flexDirection: 'column',
@@ -60,29 +69,42 @@ export default function SocialFooter({ feedbackCount, hideCTA }: SocialFooterPro
         </a>
       )}
 
-      {/* Row 3: Feedback count */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex' }}>
-          {[C.orange, C.amber, '#D9482A', C.brownSoft].map((c, i) => (
-            <div key={i} style={{
-              width: 22, height: 22, borderRadius: 11,
-              background: c, border: `2px solid rgba(245,237,216,1)`,
-              marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontFamily: '"DM Sans", system-ui',
-              fontWeight: 700, fontSize: 8,
-            }}>
-              {['ป', 'น', 'ต', '+'][i]}
+      {/* Row 3: Supporter avatars + count */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Stacked initial circles */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {displayInitials.map((initial, i) => (
+            <div
+              key={i}
+              style={{
+                width: 22, height: 22, borderRadius: 11,
+                background: BRAND_COLORS[i % BRAND_COLORS.length],
+                border: '2px solid rgba(250,243,232,1)',
+                marginLeft: i === 0 ? 0 : -7,
+                zIndex: MAX_SHOWN - i,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontFamily: '"DM Sans", system-ui',
+                fontWeight: 700, fontSize: 8,
+                position: 'relative',
+              }}
+            >
+              {initial}
             </div>
           ))}
         </div>
-        <div style={{
-          fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft,
-        }}>
-          {feedbackCount != null
-            ? <><span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>{feedbackCount.toLocaleString()}</span> คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</>
-            : <span style={{ color: 'rgba(44,26,14,0.35)' }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</span>
-          }
+
+        {/* Count text */}
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: C.brownSoft }}>
+          {feedbackCount != null ? (
+            <>
+              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, color: C.brown }}>
+                +{overflowCount != null && overflowCount > 0 ? overflowCount.toLocaleString() : feedbackCount.toLocaleString()} คน
+              </span>
+              {' '}ให้กำลังใจทีมงานเราเดือนนี้ ❤︎
+            </>
+          ) : (
+            <span style={{ color: 'rgba(44,26,14,0.35)' }}>คนให้กำลังใจทีมงานเราเดือนนี้ ❤︎</span>
+          )}
         </div>
       </div>
     </div>

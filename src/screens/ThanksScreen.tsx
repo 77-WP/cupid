@@ -23,6 +23,11 @@ interface MenuItemDB {
   display_order: number
 }
 
+interface QAQuestion {
+  question: string
+  options: string[]
+}
+
 interface CupidSettings {
   announcement_is_active: boolean
   announcement_title: string | null
@@ -33,6 +38,7 @@ interface CupidSettings {
   qa_is_active: boolean
   weekly_question: string | null
   weekly_question_options: string[] | null
+  weekly_questions: QAQuestion[] | null
   qa_priority: string | null
 }
 
@@ -263,7 +269,9 @@ export default function ThanksScreen() {
   const [showVoteSheet, setShowVoteSheet] = useState(false)
   const [slideIndex, setSlideIndex] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
-  const [qaSelected, setQaSelected] = useState<string | null>(null)
+  const [qaIndex, setQaIndex] = useState(0)
+  const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({})
+  const [qaTouchStartX, setQaTouchStartX] = useState<number | null>(null)
 
   useEffect(() => {
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
@@ -296,12 +304,23 @@ export default function ThanksScreen() {
     fetchJoe()
   }, [])
 
-  const handleQaAnswer = (ans: string) => {
-    if (qaSelected) return
-    setQaSelected(ans)
-    const lastId = sessionStorage.getItem('last_feedback_id')
-    if (lastId) {
-      supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
+  const qaQuestions: QAQuestion[] = (() => {
+    if (settings?.weekly_questions?.length) return settings.weekly_questions.slice(0, 3)
+    if (settings?.weekly_question) return [{ question: settings.weekly_question, options: settings.weekly_question_options || [] }]
+    return []
+  })()
+
+  const handleQaAnswer = (ans: string, idx: number) => {
+    if (qaAnswers[idx] !== undefined) return
+    setQaAnswers(prev => ({ ...prev, [idx]: ans }))
+    if (idx === 0) {
+      const lastId = sessionStorage.getItem('last_feedback_id')
+      if (lastId) {
+        supabase.from('cupid_feedback').update({ qa_answer: ans }).eq('id', lastId)
+      }
+    }
+    if (idx < qaQuestions.length - 1) {
+      setTimeout(() => setQaIndex(idx + 1), 2000)
     }
   }
 
@@ -541,15 +560,27 @@ export default function ThanksScreen() {
             </div>
           </div>
 
-          {/* Card B — Weekly Q&A or placeholder */}
-          {settings?.qa_is_active && settings.weekly_question ? (
-            <div style={{
-              background: 'white',
-              borderRadius: 18, padding: 16,
-              border: '1.5px solid rgba(245,166,35,0.25)',
-              boxShadow: '0 4px 14px rgba(245,166,35,0.12)',
-              display: 'flex', flexDirection: 'column',
-            }}>
+          {/* Card B — Weekly Q&A carousel or placeholder */}
+          {settings?.qa_is_active && qaQuestions.length > 0 ? (
+            <div
+              style={{
+                background: 'white',
+                borderRadius: 18, padding: '14px 14px 10px',
+                border: '1.5px solid rgba(245,166,35,0.25)',
+                boxShadow: '0 4px 14px rgba(245,166,35,0.12)',
+                display: 'flex', flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+              onTouchStart={(e) => setQaTouchStartX(e.touches[0].clientX)}
+              onTouchEnd={(e) => {
+                if (qaTouchStartX === null) return
+                const diff = qaTouchStartX - e.changedTouches[0].clientX
+                if (diff > 30 && qaIndex < qaQuestions.length - 1) setQaIndex(p => p + 1)
+                if (diff < -30 && qaIndex > 0) setQaIndex(p => p - 1)
+                setQaTouchStartX(null)
+              }}
+            >
+              {/* Badge */}
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 8,
                 background: '#FEF3C7', borderRadius: 20, padding: '3px 8px',
@@ -559,34 +590,62 @@ export default function ThanksScreen() {
                   📋 คำถามสัปดาห์นี้
                 </span>
               </div>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 10, flex: 1 }}>
-                {settings.weekly_question}
-              </div>
-              {qaSelected ? (
-                <div style={{
-                  padding: '6px 10px', borderRadius: 50,
-                  background: '#E8622A', color: 'white',
-                  fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11,
-                  textAlign: 'center',
-                }}>
-                  ✓ ขอบคุณครับ
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {(settings.weekly_question_options || []).filter(Boolean).slice(0, 3).map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => handleQaAnswer(opt)}
-                      style={{
-                        padding: '8px 10px', borderRadius: 50,
-                        border: '1.5px solid rgba(232,98,42,0.25)',
-                        background: 'transparent', color: '#E8622A',
+
+              {/* Animated question content */}
+              {(() => {
+                const q = qaQuestions[qaIndex]
+                const answered = qaAnswers[qaIndex]
+                return (
+                  <div key={qaIndex} style={{ flex: 1, animation: 'slideLeft 0.25s ease-out' }}>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#2C1A0E', lineHeight: 1.4, marginBottom: 10 }}>
+                      {q.question}
+                    </div>
+                    {answered ? (
+                      <div style={{
+                        padding: '6px 10px', borderRadius: 50,
+                        background: '#E8622A', color: 'white',
                         fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11,
-                        cursor: 'pointer', textAlign: 'center',
+                        textAlign: 'center',
+                      }}>
+                        ✓ ขอบคุณครับ
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {(q.options || []).filter(Boolean).slice(0, 3).map((opt: string) => (
+                          <button
+                            key={opt}
+                            onClick={() => handleQaAnswer(opt, qaIndex)}
+                            style={{
+                              padding: '8px 10px', borderRadius: 50,
+                              border: '1.5px solid rgba(232,98,42,0.25)',
+                              background: 'transparent', color: '#E8622A',
+                              fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 11,
+                              cursor: 'pointer', textAlign: 'center',
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Dot indicators — only if multiple questions */}
+              {qaQuestions.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 10 }}>
+                  {qaQuestions.map((_, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setQaIndex(i)}
+                      style={{
+                        height: 4, borderRadius: 2, cursor: 'pointer',
+                        background: i === qaIndex ? '#E8622A' : 'rgba(44,26,14,0.15)',
+                        width: i === qaIndex ? 14 : 5,
+                        transition: 'all 0.3s ease',
                       }}
-                    >
-                      {opt}
-                    </button>
+                    />
                   ))}
                 </div>
               )}
