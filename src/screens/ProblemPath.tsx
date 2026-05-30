@@ -363,16 +363,16 @@ export default function ProblemPath() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginTop: 16 }}>สั่งผ่านช่องทางไหนครับ?</div>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4 }}>เลือกช่องทางที่ใช้สั่งครับ</div>
           </div>
-          <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {PLATFORMS.map(({ label, value }) => {
               const brand = PLATFORM_BRAND[value] ?? '#2C1A0E'
               return (
                 <button key={value} onClick={() => selectPlatform(value)}
                   style={{
-                    width: '100%', padding: '18px 20px', borderRadius: 18, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 17,
-                    border: `2px solid ${brand}`, background: 'white', color: '#2C1A0E',
+                    height: 120, padding: '0', borderRadius: 18, cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15,
+                    border: 'none', borderLeft: `4px solid ${brand}`, background: 'white', color: '#2C1A0E',
                     transition: 'all 0.15s ease', boxSizing: 'border-box',
                     boxShadow: '0 2px 8px rgba(44,26,14,0.06)',
                   }}
@@ -380,8 +380,10 @@ export default function ProblemPath() {
                   onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
                 >
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: brand, flexShrink: 0 }} />
-                  {label}
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: `${brand}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: brand }} />
+                  </div>
+                  <span style={{ textAlign: 'center', lineHeight: 1.3, padding: '0 8px' }}>{label}</span>
                 </button>
               )
             })}
