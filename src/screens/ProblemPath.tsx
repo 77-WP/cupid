@@ -15,9 +15,9 @@ const PROBLEM_CATEGORIES = [
 ]
 
 const PLATFORMS = [
-  { label: 'Grab',              value: 'grab'    },
-  { label: 'LINE MAN',          value: 'lineman' },
-  { label: 'Shopee Food',       value: 'shopee'  },
+  { label: 'Grab',               value: 'grab'    },
+  { label: 'LINE MAN',           value: 'lineman' },
+  { label: 'Shopee Food',        value: 'shopee'  },
   { label: 'Walk-in / หน้าร้าน', value: 'walkin'  },
 ]
 
@@ -35,11 +35,9 @@ const PLATFORM_LABEL: Record<string, string> = {
   walkin:  'Walk-in / หน้าร้าน',
 }
 
-const TRACK_POSITIONS: Record<number, string> = {
-  1: '16.67%',
-  2: '50%',
-  3: '83.33%',
-}
+// Walk-in: 3 steps, Delivery: 4 steps
+const WALKIN_TRACK: Record<number, string>   = { 1: '16.67%', 2: '50%', 3: '83.33%' }
+const DELIVERY_TRACK: Record<number, string> = { 1: '12.5%',  2: '37.5%', 3: '62.5%', 4: '87.5%' }
 
 export default function ProblemPath() {
   const navigate = useNavigate()
@@ -56,7 +54,8 @@ export default function ProblemPath() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNightTime, setIsNightTime] = useState(false)
-  const [cardStep, setCardStep] = useState<1 | 2 | 3>(1)
+  // 0 = platform selection (no progress bar), 1–4 = form cards
+  const [cardStep, setCardStep] = useState<0 | 1 | 2 | 3 | 4>(0)
   const [cardExiting, setCardExiting] = useState(false)
 
   useEffect(() => {
@@ -66,28 +65,24 @@ export default function ProblemPath() {
 
   useEffect(() => {
     if (screen !== 'intercept') return
-    const fadeTimer = setTimeout(() => {
-      setInterceptFading(true)
-    }, 2000)
+    const fadeTimer = setTimeout(() => setInterceptFading(true), 2000)
     const switchTimer = setTimeout(() => {
       setInterceptFading(false)
       setScreen('category')
     }, 2500)
-    return () => {
-      clearTimeout(fadeTimer)
-      clearTimeout(switchTimer)
-    }
+    return () => { clearTimeout(fadeTimer); clearTimeout(switchTimer) }
   }, [screen])
 
   useEffect(() => {
-    if (screen === 'detail') setCardStep(1)
+    if (screen === 'detail') setCardStep(0)
   }, [screen])
 
   const isWalkIn = platform === 'walkin'
+  const totalSteps = isWalkIn ? 3 : 4
+  const trackPositions = isWalkIn ? WALKIN_TRACK : DELIVERY_TRACK
   const canSubmit = platform !== '' && phone.trim().length >= 9 && (isWalkIn || orderNumber.trim().length > 0)
-  const deliveryCard2Ready = orderNumber.trim().length > 0 && phone.trim().length >= 9
 
-  const advanceCard = (nextStep: 1 | 2 | 3) => {
+  const advanceCard = (nextStep: 0 | 1 | 2 | 3 | 4) => {
     setCardExiting(true)
     setTimeout(() => {
       setCardExiting(false)
@@ -98,70 +93,47 @@ export default function ProblemPath() {
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return
     setIsSubmitting(true)
-
     try {
       const isCritical = ['foreign_object', 'undercooked'].includes(category)
-
       const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
       if (botToken) {
         const catLabels: Record<string, string> = {
-          wrong_order: '📋 Order ผิด/สลับ',
-          missing_item: '📦 ของขาด/ไม่ครบ',
-          taste_issue: '😕 รสชาติผิดปกติ',
-          foreign_object: '⚠️ พบสิ่งแปลกปลอม',
-          undercooked: '🔥 อาหารไม่สุก',
-          other: '❓ อื่นๆ',
+          wrong_order: '📋 Order ผิด/สลับ', missing_item: '📦 ของขาด/ไม่ครบ',
+          taste_issue: '😕 รสชาติผิดปกติ',  foreign_object: '⚠️ พบสิ่งแปลกปลอม',
+          undercooked: '🔥 อาหารไม่สุก',     other: '❓ อื่นๆ',
         }
-        const timeStr = new Date().toLocaleTimeString('th-TH', {
-          hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok',
-        })
+        const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' })
         const platformDisplay = PLATFORM_LABEL[platform] || platform
         const orderDisplay = isWalkIn ? '(Walk-in)' : orderNumber.trim()
         const msg = `🚨 PROBLEM REPORT — Best Part Cupid\n\nCategory: ${catLabels[category] || category}\nPlatform: ${platformDisplay}\nOrder: ${orderDisplay}\nเบอร์: ${phone.trim()}\nข้อความ: ${problemText || '(ไม่มี)'}\n${isCritical ? '\n⚠️ CRITICAL — ต้องโทรกลับภายใน 15 นาที' : '\n⚡ ต้องโทรกลับภายใน 15-20 นาที'}\n\nเวลา: ${timeStr} น.`
-
         try {
           if (imageFile) {
-            const formData = new FormData()
-            formData.append('chat_id', '7382574942')
-            formData.append('photo', imageFile, imageFile.name)
-            formData.append('caption', msg)
-            await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-              method: 'POST',
-              body: formData,
-            })
+            const fd = new FormData()
+            fd.append('chat_id', '7382574942')
+            fd.append('photo', imageFile, imageFile.name)
+            fd.append('caption', msg)
+            await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: fd })
           } else {
             await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ chat_id: '7382574942', text: msg }),
             })
           }
-        } catch (e) {
-          console.error('Telegram error:', e)
-        }
+        } catch (e) { console.error('Telegram error:', e) }
       }
 
       const { data: feedbackData, error } = await supabase
         .from('cupid_feedback')
         .insert({
-          mood: 'problem',
-          source: platform,
-          category: category,
-          text: problemText || '',
-          phone: phone.trim(),
+          mood: 'problem', source: platform, category,
+          text: problemText || '', phone: phone.trim(),
           order_number: isWalkIn ? '' : orderNumber.trim(),
-          is_critical: isCritical,
-          wow_followup_needed: isCritical,
+          is_critical: ['foreign_object', 'undercooked'].includes(category),
+          wow_followup_needed: ['foreign_object', 'undercooked'].includes(category),
         })
-        .select()
-        .single()
-
+        .select().single()
       if (error) throw error
-
-      if (feedbackData?.id) {
-        sessionStorage.setItem('last_feedback_id', feedbackData.id)
-      }
-
+      if (feedbackData?.id) sessionStorage.setItem('last_feedback_id', feedbackData.id)
       navigate('/problem-closing')
     } catch {
       navigate('/problem-closing')
@@ -173,10 +145,7 @@ export default function ProblemPath() {
   const selectedCat = PROBLEM_CATEGORIES.find((c) => c.id === category)
 
   const cardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 24,
-    margin: '0 12px',
-    padding: '22px 20px',
+    background: 'white', borderRadius: 24, margin: '0 12px', padding: '22px 20px',
     boxShadow: '0 6px 24px rgba(44,26,14,0.08)',
     animation: cardExiting
       ? 'cardScaleOut 0.2s ease-in forwards'
@@ -184,47 +153,103 @@ export default function ProblemPath() {
   }
 
   const warmInputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '16px 18px',
-    borderRadius: 16,
-    border: 'none',
-    fontFamily: '"Sarabun", system-ui',
-    fontSize: 24,
-    fontWeight: 600,
-    color: '#2C1A0E',
-    outline: 'none',
-    boxSizing: 'border-box',
-    background: '#F5F0EA',
-    letterSpacing: '0.5px',
+    width: '100%', padding: '16px 18px', borderRadius: 16, border: 'none',
+    fontFamily: '"Sarabun", system-ui', fontSize: 24, fontWeight: 600,
+    color: '#2C1A0E', outline: 'none', boxSizing: 'border-box',
+    background: '#F5F0EA', letterSpacing: '0.5px',
   }
 
   const nextBtnActive: React.CSSProperties = {
-    width: '100%',
-    padding: 15,
-    borderRadius: 50,
-    border: 'none',
-    background: '#DC2626',
-    color: 'white',
-    fontFamily: '"Sarabun", system-ui',
-    fontWeight: 700,
-    fontSize: 16,
-    cursor: 'pointer',
-    marginTop: 14,
+    width: '100%', padding: 15, borderRadius: 50, border: 'none',
+    background: '#DC2626', color: 'white',
+    fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16,
+    cursor: 'pointer', marginTop: 14,
   }
 
   const nextBtnInactive: React.CSSProperties = {
-    width: '100%',
-    padding: 15,
-    borderRadius: 50,
-    border: 'none',
-    background: 'rgba(44,26,14,0.07)',
-    color: 'rgba(44,26,14,0.3)',
-    fontFamily: '"Sarabun", system-ui',
-    fontWeight: 700,
-    fontSize: 16,
-    cursor: 'not-allowed',
-    marginTop: 14,
+    width: '100%', padding: 15, borderRadius: 50, border: 'none',
+    background: 'rgba(44,26,14,0.07)', color: 'rgba(44,26,14,0.3)',
+    fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16,
+    cursor: 'not-allowed', marginTop: 14,
   }
+
+  // ── Detail card: description + photo + submit (shared by delivery card 4 and walk-in card 3)
+  const DescriptionCard = () => (
+    <div key="desc" style={cardStyle}>
+      <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 14 }}>
+        มีอะไรอยากบอกเพิ่มไหมครับ?
+      </div>
+      <textarea
+        className="detail-textarea"
+        value={problemText}
+        onChange={(e) => setProblemText(e.target.value)}
+        placeholder="เกิดอะไรขึ้นครับ?"
+        style={{ width: '100%', minHeight: 72, padding: '14px 16px', borderRadius: 16, border: 'none', background: '#F5F0EA', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+      />
+      {/* Photo upload */}
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#2C1A0E', marginBottom: 6 }}>
+          หรือแนบรูปภาพได้เลยครับ
+        </div>
+        {!imagePreview ? (
+          <>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: '#F5F0EA', cursor: 'pointer', border: 'none' }}
+            >
+              <span>📷</span>
+              <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E' }}>เลือกรูปภาพครับ</span>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setImageFile(file)
+                setImagePreview(URL.createObjectURL(file))
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setImageFile(file)
+                setImagePreview(URL.createObjectURL(file))
+              }}
+            />
+            <img src={imagePreview} alt="preview" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 12, marginTop: 8, display: 'block' }} />
+            <div
+              onClick={() => { setImageFile(null); setImagePreview(''); setTimeout(() => fileInputRef.current?.click(), 50) }}
+              style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.5)', cursor: 'pointer', marginTop: 6 }}
+            >
+              เลือกรูปใหม่
+            </div>
+          </>
+        )}
+      </div>
+      {/* Promise */}
+      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span>⚡</span>
+        <span style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#E8622A' }}>
+          {isNightTime ? 'ทีมงานจะติดต่อกลับวันพรุ่งนี้ ภายใน 11:30 น. ครับ' : 'ทีมงานรับเรื่องภายใน 15-20 นาทีครับ'}
+        </span>
+      </div>
+      {/* Submit */}
+      <button
+        onClick={handleSubmit} disabled={isSubmitting}
+        style={{ marginTop: 14, width: '100%', padding: 15, borderRadius: 50, border: 'none', background: '#DC2626', color: 'white', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
+      >
+        {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงานด่วนครับ 🚨'}
+      </button>
+      <div style={{ marginTop: 10, textAlign: 'center' }}>
+        <span onClick={handleSubmit} style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.3)', cursor: 'pointer' }}>
+          ข้ามส่วนนี้และส่งได้เลยครับ →
+        </span>
+      </div>
+    </div>
+  )
 
   return (
     <MobileFrame>
@@ -241,23 +266,11 @@ export default function ProblemPath() {
           from { opacity:0; transform:translateX(16px); }
           to { opacity:1; transform:translateX(0); }
         }
-        @keyframes cardSlide {
-          from { opacity:0; transform:translateX(20px); }
-          to { opacity:1; transform:translateX(0); }
-        }
         @keyframes platformPop {
           0% { transform: scale(1); }
           40% { transform: scale(0.92); }
           70% { transform: scale(1.05); }
           100% { transform: scale(1); }
-        }
-        @keyframes categorySlide {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes cardEntrance {
-          from { opacity: 0; transform: translateY(16px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes fadeInScreen {
           from { opacity: 0; }
@@ -268,9 +281,8 @@ export default function ProblemPath() {
           to { opacity: 0; }
         }
         @keyframes charWalk {
-          0%,100% { transform: translateY(0) scaleX(1); }
-          25% { transform: translateY(-3px) scaleX(1); }
-          75% { transform: translateY(-3px) scaleX(1); }
+          0%,100% { transform: translateY(0); }
+          25%,75% { transform: translateY(-3px); }
         }
         @keyframes cardScaleIn {
           from { opacity: 0; transform: scale(0.94) translateY(8px); }
@@ -287,37 +299,26 @@ export default function ProblemPath() {
         .warm-input:focus {
           background: white !important;
           box-shadow: 0 0 0 2px rgba(220,38,38,0.25);
-          outline: none;
         }
         .detail-textarea:focus {
           background: white !important;
           box-shadow: 0 0 0 2px rgba(220,38,38,0.2);
-          outline: none;
         }
-        .cat-card:active {
-          transform: scale(0.97);
-        }
+        .cat-card:active { transform: scale(0.97); }
       `}</style>
 
       {/* ── SCREEN 1: INTERCEPT ── */}
       {screen === 'intercept' && (
         <div style={{
-          background: '#FAF3E8',
-          minHeight: '100dvh',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: interceptFading
-            ? 'fadeOutScreen 0.5s ease-out forwards'
-            : 'fadeInScreen 0.4s ease-out',
+          background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+          animation: interceptFading ? 'fadeOutScreen 0.5s ease-out forwards' : 'fadeInScreen 0.4s ease-out',
         }}>
           <div style={{ flex: 1 }} />
-
           <div style={{ textAlign: 'center' }}>
             <div style={{ display: 'inline-block', animation: 'floatChar 3s ease-in-out infinite' }}>
               <NumCharacter pose="concerned" size={110} />
             </div>
           </div>
-
           <div style={{ margin: '20px 16px 0', background: 'rgba(254,242,242,0.8)', border: '1.5px solid rgba(220,38,38,0.2)', borderRadius: 18, padding: 16 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <div style={{ width: 36, height: 36, background: 'rgba(220,38,38,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -329,7 +330,6 @@ export default function ProblemPath() {
               </div>
             </div>
           </div>
-
           <div style={{ margin: '12px 16px 0', textAlign: 'center' }}>
             {!isNightTime ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -343,7 +343,6 @@ export default function ProblemPath() {
               </div>
             )}
           </div>
-
           <div style={{ flex: 1.5 }} />
         </div>
       )}
@@ -361,7 +360,6 @@ export default function ProblemPath() {
             <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginTop: 16 }}>เกิดเรื่องอะไรขึ้นครับ?</div>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4 }}>เลือกที่ใกล้เคียงที่สุดครับ</div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px' }}>
             {PROBLEM_CATEGORIES.map((cat, index) => (
               <div
@@ -369,16 +367,10 @@ export default function ProblemPath() {
                 className="cat-card"
                 onClick={() => { setCategory(cat.id); setScreen('detail') }}
                 style={{
-                  borderRadius: 18,
-                  padding: '14px 12px 16px',
-                  cursor: 'pointer',
-                  border: `1.5px solid ${cat.stroke}`,
-                  background: cat.bg,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 130,
-                  position: 'relative',
-                  overflow: 'hidden',
+                  borderRadius: 18, padding: '14px 12px 16px', cursor: 'pointer',
+                  border: `1.5px solid ${cat.stroke}`, background: cat.bg,
+                  display: 'flex', flexDirection: 'column', minHeight: 130,
+                  position: 'relative', overflow: 'hidden',
                   animation: 'cardScaleIn 0.3s ease-out both',
                   animationDelay: `${index * 60}ms`,
                   transition: 'transform 0.12s ease',
@@ -392,21 +384,21 @@ export default function ProblemPath() {
               </div>
             ))}
           </div>
-
           <div style={{ flex: 1 }} />
         </div>
       )}
 
-      {/* ── SCREEN 3: DETAIL (conversational cards) ── */}
+      {/* ── SCREEN 3: DETAIL ── */}
       {screen === 'detail' && (
         <div style={{ background: '#FAF3E8', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+
           {/* Sticky header */}
           <div style={{ padding: '16px 20px 0', position: 'sticky', top: 0, background: 'rgba(250,243,232,0.95)', backdropFilter: 'blur(8px)', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
               <button
                 onClick={() => {
-                  if (cardStep === 1) setScreen('category')
-                  else advanceCard((cardStep - 1) as 1 | 2 | 3)
+                  if (cardStep === 0) setScreen('category')
+                  else advanceCard((cardStep - 1) as 0 | 1 | 2 | 3 | 4)
                 }}
                 style={{ width: 36, height: 36, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', fontFamily: '"DM Sans", system-ui', fontSize: 20, color: '#2C1A0E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >
@@ -417,35 +409,52 @@ export default function ProblemPath() {
               </div>
             </div>
 
-            {/* Character progress bar */}
-            <div style={{ marginTop: 8, marginBottom: 14, padding: '0 16px' }}>
-              <div style={{ position: 'relative', height: 32 }}>
-                {/* Track background */}
-                <div style={{ position: 'absolute', top: 24, left: 4, right: 4, height: 4, borderRadius: 2, background: 'rgba(44,26,14,0.1)' }} />
-                {/* Track fill */}
-                <div style={{ position: 'absolute', top: 24, left: 4, height: 4, borderRadius: 2, background: '#DC2626', width: TRACK_POSITIONS[cardStep], transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1)', animation: 'progressGlow 2s ease-in-out infinite' }} />
-                {/* Step dots */}
-                {[1, 2, 3].map((n) => (
-                  <div
-                    key={n}
-                    style={{ position: 'absolute', top: 20, left: TRACK_POSITIONS[n], transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)', transition: 'background 0.3s ease' }}
-                  />
-                ))}
-                {/* Character on track */}
-                <div style={{ position: 'absolute', top: 0, left: TRACK_POSITIONS[cardStep], transform: 'translateX(-50%)', transition: 'left 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
-                  <div style={{ width: 24, height: 24, animation: 'charWalk 0.6s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <MascotBowl size={24} mood="happy" />
+            {/* Progress bar — only shown after platform is selected (cardStep >= 1) */}
+            {cardStep >= 1 && (
+              <div style={{ marginTop: 8, marginBottom: 14, padding: '0 16px' }}>
+                <div style={{ position: 'relative', height: 32 }}>
+                  {/* Track background */}
+                  <div style={{ position: 'absolute', top: 24, left: 4, right: 4, height: 4, borderRadius: 2, background: 'rgba(44,26,14,0.1)' }} />
+                  {/* Track fill */}
+                  <div style={{
+                    position: 'absolute', top: 24, left: 4, height: 4, borderRadius: 2,
+                    background: '#DC2626', width: trackPositions[cardStep],
+                    transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                    animation: 'progressGlow 2s ease-in-out infinite',
+                  }} />
+                  {/* Step dots */}
+                  {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
+                    <div
+                      key={n}
+                      style={{
+                        position: 'absolute', top: 20, left: trackPositions[n], transform: 'translateX(-50%)',
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: n <= cardStep ? '#DC2626' : 'rgba(44,26,14,0.15)',
+                        transition: 'background 0.3s ease',
+                      }}
+                    />
+                  ))}
+                  {/* Num character walking along track */}
+                  <div style={{
+                    position: 'absolute', top: 0, left: trackPositions[cardStep],
+                    transform: 'translateX(-50%)',
+                    transition: 'left 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                  }}>
+                    <div style={{ width: 24, height: 24, animation: 'charWalk 0.6s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MascotBowl size={24} mood="happy" />
+                    </div>
+                    <div style={{ width: 16, height: 3, borderRadius: '50%', background: 'rgba(44,26,14,0.1)', margin: '0 auto', marginTop: -1 }} />
                   </div>
-                  <div style={{ width: 16, height: 3, borderRadius: '50%', background: 'rgba(44,26,14,0.1)', margin: '0 auto', marginTop: -1 }} />
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div style={{ paddingBottom: 32 }}>
-            {/* ── CARD 1: Platform ── */}
-            {cardStep === 1 && (
-              <div key={1} style={cardStyle}>
+
+            {/* ── PRE-CARD 0: Platform selection ── */}
+            {cardStep === 0 && (
+              <div key={0} style={cardStyle}>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 16 }}>
                   สั่งผ่านช่องทางไหนครับ?
                 </div>
@@ -458,19 +467,12 @@ export default function ProblemPath() {
                         key={value}
                         onClick={() => {
                           setPlatform(value)
-                          setTimeout(() => advanceCard(2), 280)
+                          setTimeout(() => advanceCard(1), 280)
                         }}
                         style={{
-                          width: 'calc(50% - 5px)',
-                          padding: '13px 12px',
-                          borderRadius: 16,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontFamily: '"Sarabun", system-ui',
-                          fontWeight: 700,
-                          fontSize: 15,
+                          width: 'calc(50% - 5px)', padding: '13px 12px', borderRadius: 16,
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15,
                           border: selected ? 'none' : `2px solid ${brand}`,
                           background: selected ? brand : 'white',
                           color: selected ? 'white' : '#2C1A0E',
@@ -488,24 +490,52 @@ export default function ProblemPath() {
               </div>
             )}
 
-            {/* ── CARD 2: Contact info (conditional: walk-in = phone only, delivery = order + phone) ── */}
+            {/* ── CARD 1: Platform confirmation (read-only) ── */}
+            {cardStep === 1 && platform !== '' && (
+              <div key={1} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.45)', marginBottom: 12 }}>
+                  ช่องทางที่เลือก
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  background: '#F5F0EA', borderRadius: 16, padding: '16px 18px', marginBottom: 20,
+                }}>
+                  <div style={{
+                    width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
+                    background: PLATFORM_BRAND[platform] ?? '#2C1A0E',
+                  }} />
+                  <div style={{
+                    fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 22, color: '#2C1A0E',
+                  }}>
+                    {PLATFORM_LABEL[platform]}
+                  </div>
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginBottom: 16, lineHeight: 1.6 }}>
+                  {isWalkIn
+                    ? 'กรอกเบอร์ติดต่อ แล้วทีมงานจะโทรหาคุณที่ร้านเลยครับ'
+                    : 'กรอก Order Number และเบอร์โทร แล้วทีมงานจะรีบเช็คให้ครับ'}
+                </div>
+                <button onClick={() => advanceCard(2)} style={nextBtnActive}>
+                  ถูกต้องครับ ต่อไปเลย →
+                </button>
+              </div>
+            )}
+
+            {/* ── CARD 2: Order number (delivery) / Phone (walk-in) ── */}
             {cardStep === 2 && (
               <div key={2} style={cardStyle}>
                 {isWalkIn ? (
                   <>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 4 }}>
                       เบอร์โทรติดต่อกลับครับ
                     </div>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginBottom: 16 }}>
                       ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
                     </div>
                     <input
-                      className="warm-input"
-                      type="tel"
-                      value={phone}
+                      className="warm-input" type="tel" value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="0812345678"
-                      style={warmInputStyle}
+                      placeholder="0812345678" style={warmInputStyle} autoFocus
                     />
                     <button
                       onClick={() => { if (phone.trim().length >= 9) advanceCard(3) }}
@@ -520,147 +550,58 @@ export default function ProblemPath() {
                     <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 4 }}>
                       เลขออเดอร์ครับ
                     </div>
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 12 }}>
+                    <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', marginBottom: 14 }}>
                       💡 ช่วยให้ทีมงานเช็คก่อนโทร แก้ได้เร็วกว่าครับ
                     </div>
                     <input
-                      className="warm-input"
-                      type="text"
-                      value={orderNumber}
+                      className="warm-input" type="text" value={orderNumber}
                       onChange={(e) => setOrderNumber(e.target.value)}
                       placeholder="เช่น GF-12345678"
-                      style={{ ...warmInputStyle, fontSize: 18 }}
-                    />
-                    <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, color: '#2C1A0E', marginTop: 20, marginBottom: 4 }}>
-                      เบอร์โทรติดต่อกลับ
-                    </div>
-                    <input
-                      className="warm-input"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="0812345678"
-                      style={warmInputStyle}
+                      style={{ ...warmInputStyle, fontSize: 18 }} autoFocus
                     />
                     <button
-                      onClick={() => { if (deliveryCard2Ready) advanceCard(3) }}
-                      disabled={!deliveryCard2Ready}
-                      style={deliveryCard2Ready ? nextBtnActive : nextBtnInactive}
+                      onClick={() => { if (orderNumber.trim().length > 0) advanceCard(3) }}
+                      disabled={orderNumber.trim().length === 0}
+                      style={orderNumber.trim().length > 0 ? nextBtnActive : nextBtnInactive}
                     >
-                      {deliveryCard2Ready ? 'ต่อไปครับ →' : 'กรุณากรอกข้อมูลให้ครบครับ'}
+                      {orderNumber.trim().length > 0 ? 'ต่อไปครับ →' : 'กรุณากรอก Order Number ครับ'}
                     </button>
                   </>
                 )}
               </div>
             )}
 
-            {/* ── CARD 3: Details (optional) + Submit ── */}
+            {/* ── CARD 3: Phone (delivery) / Description+submit (walk-in) ── */}
             {cardStep === 3 && (
-              <div key={3} style={cardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 14 }}>
-                  มีอะไรอยากบอกเพิ่มไหมครับ?
-                </div>
-
-                <textarea
-                  className="detail-textarea"
-                  value={problemText}
-                  onChange={(e) => setProblemText(e.target.value)}
-                  placeholder="เกิดอะไรขึ้นครับ?"
-                  style={{ width: '100%', minHeight: 72, padding: '14px 16px', borderRadius: 16, border: 'none', background: '#F5F0EA', fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
-                />
-
-                {/* Photo upload */}
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 13, color: '#2C1A0E', marginBottom: 6 }}>
-                    หรือแนบรูปภาพได้เลยครับ
+              isWalkIn ? (
+                <DescriptionCard />
+              ) : (
+                <div key={3} style={cardStyle}>
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 4 }}>
+                    เบอร์โทรติดต่อกลับครับ
                   </div>
-                  {!imagePreview ? (
-                    <>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: '#F5F0EA', cursor: 'pointer', border: 'none' }}
-                      >
-                        <span>📷</span>
-                        <span style={{ fontFamily: '"Sarabun", system-ui', fontSize: 14, color: '#2C1A0E' }}>เลือกรูปภาพครับ</span>
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          setImageFile(file)
-                          setImagePreview(URL.createObjectURL(file))
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          setImageFile(file)
-                          setImagePreview(URL.createObjectURL(file))
-                        }}
-                      />
-                      <img
-                        src={imagePreview}
-                        alt="preview"
-                        style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 12, marginTop: 8, display: 'block' }}
-                      />
-                      <div
-                        onClick={() => {
-                          setImageFile(null)
-                          setImagePreview('')
-                          setTimeout(() => fileInputRef.current?.click(), 50)
-                        }}
-                        style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.5)', cursor: 'pointer', marginTop: 6 }}
-                      >
-                        เลือกรูปใหม่
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Promise */}
-                <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>⚡</span>
-                  <span style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 12, color: '#E8622A' }}>
-                    {isNightTime
-                      ? 'ทีมงานจะติดต่อกลับวันพรุ่งนี้ ภายใน 11:30 น. ครับ'
-                      : 'ทีมงานรับเรื่องภายใน 15-20 นาทีครับ'}
-                  </span>
-                </div>
-
-                {/* Submit */}
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  style={{ marginTop: 14, width: '100%', padding: 15, borderRadius: 50, border: 'none', background: '#DC2626', color: 'white', fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 16, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
-                >
-                  {isSubmitting ? 'กำลังส่งครับ...' : 'ส่งให้ทีมงานด่วนครับ 🚨'}
-                </button>
-
-                {/* Skip */}
-                <div style={{ marginTop: 10, textAlign: 'center' }}>
-                  <span
-                    onClick={handleSubmit}
-                    style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.3)', cursor: 'pointer' }}
+                  <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginBottom: 16 }}>
+                    ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
+                  </div>
+                  <input
+                    className="warm-input" type="tel" value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0812345678" style={warmInputStyle} autoFocus
+                  />
+                  <button
+                    onClick={() => { if (phone.trim().length >= 9) advanceCard(4) }}
+                    disabled={phone.trim().length < 9}
+                    style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
                   >
-                    ข้ามส่วนนี้และส่งได้เลยครับ →
-                  </span>
+                    {phone.trim().length >= 9 ? 'ต่อไปครับ →' : 'กรุณากรอกเบอร์ครับ'}
+                  </button>
                 </div>
-              </div>
+              )
             )}
+
+            {/* ── CARD 4: Description+submit (delivery only) ── */}
+            {cardStep === 4 && !isWalkIn && <DescriptionCard />}
+
           </div>
         </div>
       )}
