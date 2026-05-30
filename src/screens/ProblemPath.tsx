@@ -6,15 +6,22 @@ import NumCharacter from '../components/NumCharacter'
 import { supabase } from '../lib/supabase'
 
 const PROBLEM_CATEGORIES = [
-  { id: 'wrong_order',    label: 'Order ผิด / สลับ',  sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',     isCritical: false, bg: '#FFF3EC', stroke: '#F5A623'             },
-  { id: 'missing_item',  label: 'ของขาด / ไม่ครบ',   sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',         isCritical: false, bg: '#FEF9EC', stroke: '#F5A623'             },
-  { id: 'taste_issue',   label: 'รสชาติผิดปกติ',      sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',   isCritical: false, bg: '#FFF0F0', stroke: '#E8622A'             },
-  { id: 'foreign_object',label: 'พบสิ่งแปลกปลอม',     sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',          isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
-  { id: 'undercooked',   label: 'อาหารไม่สุก',        sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',         isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
-  { id: 'other',         label: 'อื่นๆ',              sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',       isCritical: false, bg: '#F5F0EA', stroke: 'rgba(44,26,14,0.15)' },
+  { id: 'wrong_order',    emoji: '🔄', label: 'Order ผิด / สลับ',  sub: 'ได้รับอาหารที่ไม่ตรงกับที่สั่ง',     isCritical: false, bg: '#FFF3EC', stroke: '#F5A623'             },
+  { id: 'missing_item',  emoji: '📦', label: 'ของขาด / ไม่ครบ',   sub: 'มีรายการที่สั่งแต่ไม่ได้รับ',         isCritical: false, bg: '#FEF9EC', stroke: '#F5A623'             },
+  { id: 'taste_issue',   emoji: '🍜', label: 'รสชาติผิดปกติ',      sub: 'รสชาติไม่เหมือนปกติ หรือผิดสังเกต',   isCritical: false, bg: '#FFF0F0', stroke: '#E8622A'             },
+  { id: 'foreign_object',emoji: '⚠️', label: 'พบสิ่งแปลกปลอม',     sub: 'พบสิ่งที่ไม่ควรอยู่ในอาหาร',          isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
+  { id: 'undercooked',   emoji: '🔥', label: 'อาหารไม่สุก',        sub: 'เนื้อสัตว์หรืออาหารสุกไม่พอ',         isCritical: true,  bg: '#FFF0F0', stroke: '#DC2626'             },
+  { id: 'other',         emoji: '💬', label: 'อื่นๆ',              sub: 'ปัญหาที่ไม่อยู่ในรายการข้างต้น',       isCritical: false, bg: '#F5F0EA', stroke: 'rgba(44,26,14,0.15)' },
 ]
 
 const PLATFORMS = ['Grab', 'LINE MAN', 'Shopee Food', 'หน้าร้าน']
+
+const PLATFORM_BRAND: Record<string, string> = {
+  'Grab':        '#00B14F',
+  'LINE MAN':    '#06C755',
+  'Shopee Food': '#EE4D2D',
+  'หน้าร้าน':    '#5C3B22',
+}
 
 const TRACK_POSITIONS: Record<number, string> = {
   1: '12.5%',
@@ -365,9 +372,8 @@ export default function ProblemPath() {
                   transition: 'transform 0.12s ease',
                 }}
               >
-                {/* Illustration placeholder */}
-                <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(44,26,14,0.06)', border: '1.5px dashed rgba(44,26,14,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: 20, color: 'rgba(44,26,14,0.2)' }}>+</span>
+                <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(44,26,14,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 32, lineHeight: 1 }}>{cat.emoji}</span>
                 </div>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E', lineHeight: 1.3, marginBottom: 4 }}>{cat.label}</div>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 12, color: 'rgba(44,26,14,0.45)', lineHeight: 1.5 }}>{cat.sub}</div>
@@ -432,70 +438,47 @@ export default function ProblemPath() {
                   สั่งผ่านช่องทางไหนครับ?
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {PLATFORMS.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => {
-                        setPlatform(p)
-                        setTimeout(() => advanceCard(2), 280)
-                      }}
-                      style={{
-                        width: 'calc(50% - 5px)',
-                        padding: '14px 16px',
-                        borderRadius: 16,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: '"Sarabun", system-ui',
-                        fontWeight: 700,
-                        fontSize: 15,
-                        border: 'none',
-                        background: platform === p ? '#2C1A0E' : '#F5F0EA',
-                        color: platform === p ? 'white' : '#2C1A0E',
-                        transform: platform === p ? 'scale(0.97)' : 'scale(1)',
-                        transition: 'all 0.15s ease',
-                        animation: platform === p ? 'platformPop 0.3s ease-out' : undefined,
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                  {PLATFORMS.map((p) => {
+                    const brand = PLATFORM_BRAND[p] ?? '#2C1A0E'
+                    const selected = platform === p
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          setPlatform(p)
+                          setTimeout(() => advanceCard(2), 280)
+                        }}
+                        style={{
+                          width: 'calc(50% - 5px)',
+                          padding: '13px 12px',
+                          borderRadius: 16,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontFamily: '"Sarabun", system-ui',
+                          fontWeight: 700,
+                          fontSize: 15,
+                          border: selected ? 'none' : `2px solid ${brand}`,
+                          background: selected ? brand : 'white',
+                          color: selected ? 'white' : '#2C1A0E',
+                          transform: selected ? 'scale(0.97)' : 'scale(1)',
+                          transition: 'all 0.15s ease',
+                          animation: selected ? 'platformPop 0.3s ease-out' : undefined,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        {p}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {/* ── CARD 2: Phone ── */}
+            {/* ── CARD 2: Order Number ── */}
             {cardStep === 2 && (
               <div key={2} style={cardStyle}>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
-                  เบอร์ติดต่อครับ
-                </div>
-                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
-                  ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
-                </div>
-                <input
-                  className="warm-input"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="08X-XXX-XXXX"
-                  style={warmInputStyle}
-                />
-                <button
-                  onClick={() => { if (phone.trim().length >= 9) advanceCard(3) }}
-                  disabled={phone.trim().length < 9}
-                  style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
-                >
-                  {phone.trim().length >= 9 ? 'ต่อไปครับ →' : 'กรุณากรอกเบอร์ครับ'}
-                </button>
-              </div>
-            )}
-
-            {/* ── CARD 3: Order Number ── */}
-            {cardStep === 3 && (
-              <div key={3} style={cardStyle}>
                 <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E', marginBottom: 8 }}>
                   หมายเลข Order ครับ
                 </div>
@@ -511,11 +494,38 @@ export default function ProblemPath() {
                   style={{ ...warmInputStyle, fontSize: 18 }}
                 />
                 <button
-                  onClick={() => { if (orderNumber.trim().length > 0) advanceCard(4) }}
+                  onClick={() => { if (orderNumber.trim().length > 0) advanceCard(3) }}
                   disabled={orderNumber.trim().length === 0}
                   style={orderNumber.trim().length > 0 ? nextBtnActive : nextBtnInactive}
                 >
                   {orderNumber.trim().length > 0 ? 'ต่อไปครับ →' : 'กรุณากรอก Order Number ครับ'}
+                </button>
+              </div>
+            )}
+
+            {/* ── CARD 3: Phone ── */}
+            {cardStep === 3 && (
+              <div key={3} style={cardStyle}>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 20, color: '#2C1A0E' }}>
+                  เบอร์ติดต่อครับ
+                </div>
+                <div style={{ fontFamily: '"Sarabun", system-ui', fontSize: 13, color: 'rgba(44,26,14,0.5)', marginTop: 4, marginBottom: 16 }}>
+                  ทีมงานจะโทรกลับหาคุณเองเลยครับ ไม่ต้องรอนาน
+                </div>
+                <input
+                  className="warm-input"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="08X-XXX-XXXX"
+                  style={warmInputStyle}
+                />
+                <button
+                  onClick={() => { if (phone.trim().length >= 9) advanceCard(4) }}
+                  disabled={phone.trim().length < 9}
+                  style={phone.trim().length >= 9 ? nextBtnActive : nextBtnInactive}
+                >
+                  {phone.trim().length >= 9 ? 'ต่อไปครับ →' : 'กรุณากรอกเบอร์ครับ'}
                 </button>
               </div>
             )}
