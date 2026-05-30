@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import NumCharacter from '../components/NumCharacter'
 import { C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
+import BannerSlider from '../components/BannerSlider'
+import { useBanners } from '../hooks/useBanners'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -255,40 +257,6 @@ function MenuVote({ categories, onClose }: { categories: Category[]; onClose?: (
   )
 }
 
-// ── Banner Slides ──────────────────────────────────────────────────────────
-
-const BANNER_SLIDES = [
-  {
-    bg: '#2C1A0E',
-    label: 'BEST PART',
-    labelColor: 'rgba(255,255,255,0.4)',
-    text: 'สั่งข้าวกล่องสดใหม่ทุกวัน',
-    textColor: 'white',
-    arrowBg: '#E8622A',
-    arrowColor: 'white',
-    onClick: () => window.open('https://bestpartbowls.com', '_blank'),
-  },
-  {
-    bg: '#FAF3E8',
-    label: 'BEST PART',
-    labelColor: 'rgba(44,26,14,0.3)',
-    text: 'อ่านจดหมายจากผู้ก่อตั้ง 📝',
-    textColor: '#2C1A0E',
-    arrowBg: '#2C1A0E',
-    arrowColor: 'white',
-    path: '/founder',
-  },
-  {
-    bg: '#E8622A',
-    label: 'BEST PART',
-    labelColor: 'rgba(255,255,255,0.5)',
-    text: 'ประกาศ: เปิดสาขาใหม่เร็วๆนี้ 🎉',
-    textColor: 'white',
-    arrowBg: 'rgba(255,255,255,0.25)',
-    arrowColor: 'white',
-  },
-] as const
-
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function ThanksScreen() {
@@ -305,9 +273,7 @@ export default function ThanksScreen() {
   const [qaIndex, setQaIndex] = useState(0)
   const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({})
   const [qaTouchStartX, setQaTouchStartX] = useState<number | null>(null)
-  const [bannerIndex, setBannerIndex] = useState(0)
-  const bannerTouchStartX = useRef<number | null>(null)
-  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { banners, loading: bannersLoading } = useBanners('thanks')
 
   useEffect(() => {
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
@@ -339,21 +305,6 @@ export default function ThanksScreen() {
     }
     fetchJoe()
   }, [])
-
-  useEffect(() => {
-    autoScrollRef.current = setInterval(() => {
-      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
-    }, 4000)
-    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current) }
-  }, [])
-
-  const goToBanner = (i: number) => {
-    setBannerIndex(i)
-    if (autoScrollRef.current) clearInterval(autoScrollRef.current)
-    autoScrollRef.current = setInterval(() => {
-      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
-    }, 4000)
-  }
 
   const qaQuestions: QAQuestion[] = (() => {
     if (settings?.weekly_questions?.length) return settings.weekly_questions.slice(0, 3)
@@ -421,10 +372,6 @@ export default function ThanksScreen() {
         @keyframes slideRight {
           from { opacity: 0; transform: translateX(-40px); }
           to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes bannerFade {
-          from { opacity: 0; transform: translateX(12px); }
-          to   { opacity: 1; transform: translateX(0); }
         }
       `}</style>
 
@@ -902,60 +849,7 @@ export default function ThanksScreen() {
 
         {/* ── ZONE 5: BANNER SLIDER ── */}
         <div style={{ marginTop: 16, padding: '0 16px' }}>
-          {/* Slide */}
-          <div
-            key={bannerIndex}
-            onClick={() => {
-              const slide = BANNER_SLIDES[bannerIndex]
-              if ('path' in slide && slide.path) navigate(slide.path)
-              else if ('onClick' in slide && slide.onClick) slide.onClick()
-            }}
-            onTouchStart={(e) => { bannerTouchStartX.current = e.touches[0].clientX }}
-            onTouchEnd={(e) => {
-              if (bannerTouchStartX.current === null) return
-              const diff = bannerTouchStartX.current - e.changedTouches[0].clientX
-              if (diff > 40) goToBanner((bannerIndex + 1) % BANNER_SLIDES.length)
-              else if (diff < -40) goToBanner((bannerIndex - 1 + BANNER_SLIDES.length) % BANNER_SLIDES.length)
-              bannerTouchStartX.current = null
-            }}
-            style={{
-              height: 72, borderRadius: 16,
-              background: BANNER_SLIDES[bannerIndex].bg,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 16px', cursor: 'pointer',
-              overflow: 'hidden', boxSizing: 'border-box',
-              animation: 'bannerFade 0.3s ease-out',
-            }}
-          >
-            <div>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 9, color: BANNER_SLIDES[bannerIndex].labelColor, letterSpacing: '0.15em', display: 'block' }}>
-                {BANNER_SLIDES[bannerIndex].label}
-              </span>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: BANNER_SLIDES[bannerIndex].textColor, marginTop: 2 }}>
-                {BANNER_SLIDES[bannerIndex].text}
-              </div>
-            </div>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: BANNER_SLIDES[bannerIndex].arrowBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: BANNER_SLIDES[bannerIndex].arrowColor }}>→</span>
-            </div>
-          </div>
-
-          {/* Dot indicators */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
-            {BANNER_SLIDES.map((_, i) => (
-              <div
-                key={i}
-                onClick={() => goToBanner(i)}
-                style={{
-                  height: 6, borderRadius: 3,
-                  width: i === bannerIndex ? 18 : 6,
-                  background: i === bannerIndex ? C.orange : 'rgba(44,26,14,0.18)',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer',
-                }}
-              />
-            ))}
-          </div>
+          <BannerSlider banners={banners} loading={bannersLoading} />
 
           {/* Supporter count */}
           <div style={{ marginTop: 12, textAlign: 'center', fontFamily: '"Sarabun", system-ui', fontSize: 13, color: C.brownSoft }}>

@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { HeartLogo } from '../components/Illustrations'
 import NumCharacter from '../components/NumCharacter'
 import { C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
+import BannerSlider from '../components/BannerSlider'
+import { useBanners } from '../hooks/useBanners'
 
 interface CupidSettings {
   announcement_is_active: boolean
@@ -29,37 +31,6 @@ const tiles = [
 const CARD_SHADOW = '0 1px 4px rgba(44,26,14,0.07), 0 4px 16px rgba(44,26,14,0.05)'
 const CARD_BORDER = '1.5px solid rgba(44,26,14,0.06)'
 
-const BANNER_SLIDES = [
-  {
-    bg: '#2C1A0E',
-    label: 'BEST PART',
-    labelColor: 'rgba(255,255,255,0.4)',
-    text: 'สั่งข้าวกล่องสดใหม่ทุกวัน',
-    textColor: 'white',
-    arrowBg: '#E8622A',
-    arrowColor: 'white',
-    onClick: () => window.open('https://bestpartbowls.com', '_blank'),
-  },
-  {
-    bg: '#FAF3E8',
-    label: 'BEST PART',
-    labelColor: 'rgba(44,26,14,0.3)',
-    text: 'อ่านจดหมายจากผู้ก่อตั้ง 📝',
-    textColor: '#2C1A0E',
-    arrowBg: '#2C1A0E',
-    arrowColor: 'white',
-    path: '/founder',
-  },
-  {
-    bg: '#E8622A',
-    label: 'BEST PART',
-    labelColor: 'rgba(255,255,255,0.5)',
-    text: 'ประกาศ: เปิดสาขาใหม่เร็วๆนี้ 🎉',
-    textColor: 'white',
-    arrowBg: 'rgba(255,255,255,0.25)',
-    arrowColor: 'white',
-  },
-]
 
 export default function LandingScreen() {
   const navigate = useNavigate()
@@ -67,9 +38,7 @@ export default function LandingScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
   const [settings, setSettings] = useState<CupidSettings | null>(null)
-  const [bannerIndex, setBannerIndex] = useState(0)
-  const touchStartX = useRef<number | null>(null)
-  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { banners, loading: bannersLoading } = useBanners('landing')
 
   useEffect(() => {
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
@@ -80,29 +49,10 @@ export default function LandingScreen() {
     })
   }, [])
 
-  // Auto-scroll banner
-  useEffect(() => {
-    autoScrollRef.current = setInterval(() => {
-      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
-    }, 4000)
-    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current) }
-  }, [])
-
-  const resetAutoScroll = () => {
-    if (autoScrollRef.current) clearInterval(autoScrollRef.current)
-    autoScrollRef.current = setInterval(() => {
-      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
-    }, 4000)
-  }
-
-  const goToBanner = (i: number) => { setBannerIndex(i); resetAutoScroll() }
-
   const handleTileTap = (key: string, path: string) => {
     setToast(TILE_TOASTS[key])
     setTimeout(() => { setToast(null); navigate(path) }, 900)
   }
-
-  const slide = BANNER_SLIDES[bannerIndex]
 
   return (
     <MobileFrame>
@@ -130,10 +80,6 @@ export default function LandingScreen() {
         @keyframes mascot-float {
           0%,100% { transform:translateY(0); }
           50% { transform:translateY(-8px); }
-        }
-        @keyframes bannerFade {
-          from { opacity: 0; transform: translateX(12px); }
-          to   { opacity: 1; transform: translateX(0); }
         }
         .mascot-float { animation: mascot-float 3s ease-in-out infinite; }
         .tile-btn:active { transform: scale(0.95) !important; }
@@ -276,60 +222,7 @@ export default function LandingScreen() {
 
         {/* ── BANNER SLIDER ── */}
         <div style={{ marginTop: 12, padding: '0 16px', animation: 'fadeUp 0.4s ease-out 0.4s both' }}>
-          {/* Slide */}
-          <div
-            key={bannerIndex}
-            onClick={() => {
-              if (slide.path) navigate(slide.path)
-              else if (slide.onClick) slide.onClick()
-            }}
-            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
-            onTouchEnd={(e) => {
-              if (touchStartX.current === null) return
-              const diff = touchStartX.current - e.changedTouches[0].clientX
-              if (diff > 40) goToBanner((bannerIndex + 1) % BANNER_SLIDES.length)
-              else if (diff < -40) goToBanner((bannerIndex - 1 + BANNER_SLIDES.length) % BANNER_SLIDES.length)
-              touchStartX.current = null
-            }}
-            style={{
-              height: 72, borderRadius: 16,
-              background: slide.bg,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 16px', cursor: 'pointer',
-              overflow: 'hidden', boxSizing: 'border-box',
-              animation: 'bannerFade 0.3s ease-out',
-              transition: 'background 0.3s ease',
-            }}
-          >
-            <div>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 9, color: slide.labelColor, letterSpacing: '0.15em', display: 'block' }}>
-                {slide.label}
-              </span>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: slide.textColor, marginTop: 2 }}>
-                {slide.text}
-              </div>
-            </div>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: slide.arrowBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: slide.arrowColor }}>→</span>
-            </div>
-          </div>
-
-          {/* Dot indicators */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
-            {BANNER_SLIDES.map((_, i) => (
-              <div
-                key={i}
-                onClick={() => goToBanner(i)}
-                style={{
-                  height: 6, borderRadius: 3,
-                  width: i === bannerIndex ? 18 : 6,
-                  background: i === bannerIndex ? C.orange : 'rgba(44,26,14,0.18)',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer',
-                }}
-              />
-            ))}
-          </div>
+          <BannerSlider banners={banners} loading={bannersLoading} />
         </div>
 
         {/* ── ANNOUNCEMENT BANNER (conditional) ── */}
