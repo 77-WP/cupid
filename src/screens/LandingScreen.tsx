@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { HeartLogo } from '../components/Illustrations'
@@ -21,13 +21,45 @@ const TILE_TOASTS: Record<string, string> = {
 }
 
 const tiles = [
-  { key: 'happy', label: 'ชอบมาก',  sub: 'บอกต่อ',       path: '/happy'   },
-  { key: 'okay',  label: 'โอเค',    sub: 'แสดงความคิด',  path: '/neutral' },
-  { key: 'bad',   label: 'มีปัญหา', sub: 'แจ้งด่วน',     path: '/problem' },
+  { key: 'happy', emoji: '😄', label: 'ชอบมาก',  sub: 'บอกต่อ',       path: '/happy'   },
+  { key: 'okay',  emoji: '😐', label: 'โอเค',    sub: 'แสดงความคิด',  path: '/neutral' },
+  { key: 'bad',   emoji: '😟', label: 'มีปัญหา', sub: 'แจ้งด่วน',     path: '/problem' },
 ]
 
 const CARD_SHADOW = '0 1px 4px rgba(44,26,14,0.07), 0 4px 16px rgba(44,26,14,0.05)'
 const CARD_BORDER = '1.5px solid rgba(44,26,14,0.06)'
+
+const BANNER_SLIDES = [
+  {
+    bg: '#2C1A0E',
+    label: 'BEST PART',
+    labelColor: 'rgba(255,255,255,0.4)',
+    text: 'สั่งข้าวกล่องสดใหม่ทุกวัน',
+    textColor: 'white',
+    arrowBg: '#E8622A',
+    arrowColor: 'white',
+    onClick: () => window.open('https://bestpartbowls.com', '_blank'),
+  },
+  {
+    bg: '#FAF3E8',
+    label: 'BEST PART',
+    labelColor: 'rgba(44,26,14,0.3)',
+    text: 'อ่านจดหมายจากผู้ก่อตั้ง 📝',
+    textColor: '#2C1A0E',
+    arrowBg: '#2C1A0E',
+    arrowColor: 'white',
+    path: '/founder',
+  },
+  {
+    bg: '#E8622A',
+    label: 'BEST PART',
+    labelColor: 'rgba(255,255,255,0.5)',
+    text: 'ประกาศ: เปิดสาขาใหม่เร็วๆนี้ 🎉',
+    textColor: 'white',
+    arrowBg: 'rgba(255,255,255,0.25)',
+    arrowColor: 'white',
+  },
+]
 
 export default function LandingScreen() {
   const navigate = useNavigate()
@@ -35,6 +67,9 @@ export default function LandingScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [feedbackCount, setFeedbackCount] = useState<number | null>(null)
   const [settings, setSettings] = useState<CupidSettings | null>(null)
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     supabase.from('cupid_feedback').select('id', { count: 'exact', head: true }).then(({ count }) => {
@@ -45,13 +80,29 @@ export default function LandingScreen() {
     })
   }, [])
 
+  // Auto-scroll banner
+  useEffect(() => {
+    autoScrollRef.current = setInterval(() => {
+      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
+    }, 4000)
+    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current) }
+  }, [])
+
+  const resetAutoScroll = () => {
+    if (autoScrollRef.current) clearInterval(autoScrollRef.current)
+    autoScrollRef.current = setInterval(() => {
+      setBannerIndex(prev => (prev + 1) % BANNER_SLIDES.length)
+    }, 4000)
+  }
+
+  const goToBanner = (i: number) => { setBannerIndex(i); resetAutoScroll() }
+
   const handleTileTap = (key: string, path: string) => {
     setToast(TILE_TOASTS[key])
-    setTimeout(() => {
-      setToast(null)
-      navigate(path)
-    }, 900)
+    setTimeout(() => { setToast(null); navigate(path) }, 900)
   }
+
+  const slide = BANNER_SLIDES[bannerIndex]
 
   return (
     <MobileFrame>
@@ -80,12 +131,12 @@ export default function LandingScreen() {
           0%,100% { transform:translateY(0); }
           50% { transform:translateY(-8px); }
         }
+        @keyframes bannerFade {
+          from { opacity: 0; transform: translateX(12px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
         .mascot-float { animation: mascot-float 3s ease-in-out infinite; }
         .tile-btn:active { transform: scale(0.95) !important; }
-        .cta-pill:hover, .cta-pill:active {
-          background: #E8622A !important;
-          color: #fff !important;
-        }
       `}</style>
 
       {toast && (
@@ -147,8 +198,14 @@ export default function LandingScreen() {
                 fontFamily: 'inherit',
               }}
             >
-              <div style={{ width: 72, height: 72, borderRadius: 14, background: 'rgba(44,26,14,0.06)', border: '1.5px dashed rgba(44,26,14,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: '"DM Sans", system-ui', fontSize: 18, color: 'rgba(44,26,14,0.2)', lineHeight: 1 }}>+</span>
+              <div style={{
+                width: 72, height: 72, borderRadius: 18,
+                background: hover === t.key ? 'rgba(232,98,42,0.08)' : 'rgba(44,26,14,0.05)',
+                border: hover === t.key ? '1.5px solid rgba(232,98,42,0.2)' : '1.5px solid rgba(44,26,14,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s, border 0.15s',
+              }}>
+                <span style={{ fontSize: 36, lineHeight: 1 }}>{t.emoji}</span>
               </div>
               <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 14, color: C.brown, marginTop: 8, textAlign: 'center' }}>
                 {t.label}
@@ -167,21 +224,16 @@ export default function LandingScreen() {
           <button
             onClick={() => navigate('/meunfun')}
             style={{
-              background: 'white',
-              borderRadius: 20,
-              padding: '16px 14px',
+              background: 'white', borderRadius: 20, padding: '16px 14px',
               display: 'flex', flexDirection: 'column',
-              boxShadow: CARD_SHADOW,
-              border: CARD_BORDER,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
+              boxShadow: CARD_SHADOW, border: CARD_BORDER,
+              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               boxSizing: 'border-box',
               animation: 'slideInLeft 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both, cardFloat 4s ease-in-out 0.6s infinite',
             }}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 11, background: 'rgba(44,26,14,0.05)', border: '1.5px dashed rgba(44,26,14,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 18, color: 'rgba(44,26,14,0.18)', fontFamily: '"DM Sans", system-ui', lineHeight: 1 }}>+</span>
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: 'rgba(245,166,35,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>✨</span>
             </div>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E', marginTop: 10 }}>
               เหมือนฝัน
@@ -198,21 +250,16 @@ export default function LandingScreen() {
           <button
             onClick={() => navigate('/founder')}
             style={{
-              background: 'white',
-              borderRadius: 20,
-              padding: '16px 14px',
+              background: 'white', borderRadius: 20, padding: '16px 14px',
               display: 'flex', flexDirection: 'column',
-              boxShadow: CARD_SHADOW,
-              border: CARD_BORDER,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
+              boxShadow: CARD_SHADOW, border: CARD_BORDER,
+              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               boxSizing: 'border-box',
               animation: 'slideInRight 0.5s cubic-bezier(0.22,1,0.36,1) 0.2s both, cardFloat 4s ease-in-out 1s infinite',
             }}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 11, background: 'rgba(44,26,14,0.05)', border: '1.5px dashed rgba(44,26,14,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 18, color: 'rgba(44,26,14,0.18)', fontFamily: '"DM Sans", system-ui', lineHeight: 1 }}>+</span>
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: 'rgba(44,26,14,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>📝</span>
             </div>
             <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: '#2C1A0E', marginTop: 10, lineHeight: 1.35 }}>
               จดหมายจาก{'\n'}ผู้ก่อตั้ง
@@ -227,19 +274,61 @@ export default function LandingScreen() {
 
         </div>
 
-        {/* ── ADS BANNER (always visible) ── */}
+        {/* ── BANNER SLIDER ── */}
         <div style={{ marginTop: 12, padding: '0 16px', animation: 'fadeUp 0.4s ease-out 0.4s both' }}>
+          {/* Slide */}
           <div
-            onClick={() => window.open('https://bestpartbowls.com', '_blank')}
-            style={{ height: 72, borderRadius: 16, background: '#2C1A0E', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', cursor: 'pointer', overflow: 'hidden', boxSizing: 'border-box' }}
+            key={bannerIndex}
+            onClick={() => {
+              if (slide.path) navigate(slide.path)
+              else if (slide.onClick) slide.onClick()
+            }}
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null) return
+              const diff = touchStartX.current - e.changedTouches[0].clientX
+              if (diff > 40) goToBanner((bannerIndex + 1) % BANNER_SLIDES.length)
+              else if (diff < -40) goToBanner((bannerIndex - 1 + BANNER_SLIDES.length) % BANNER_SLIDES.length)
+              touchStartX.current = null
+            }}
+            style={{
+              height: 72, borderRadius: 16,
+              background: slide.bg,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0 16px', cursor: 'pointer',
+              overflow: 'hidden', boxSizing: 'border-box',
+              animation: 'bannerFade 0.3s ease-out',
+              transition: 'background 0.3s ease',
+            }}
           >
             <div>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', display: 'block' }}>BEST PART</span>
-              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: 'white', marginTop: 2 }}>สั่งข้าวกล่องสดใหม่ทุกวัน</div>
+              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 9, color: slide.labelColor, letterSpacing: '0.15em', display: 'block' }}>
+                {slide.label}
+              </span>
+              <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 15, color: slide.textColor, marginTop: 2 }}>
+                {slide.text}
+              </div>
             </div>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: 'white' }}>→</span>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: slide.arrowBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontFamily: '"DM Sans", system-ui', fontWeight: 700, fontSize: 16, color: slide.arrowColor }}>→</span>
             </div>
+          </div>
+
+          {/* Dot indicators */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+            {BANNER_SLIDES.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => goToBanner(i)}
+                style={{
+                  height: 6, borderRadius: 3,
+                  width: i === bannerIndex ? 18 : 6,
+                  background: i === bannerIndex ? C.orange : 'rgba(44,26,14,0.18)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                }}
+              />
+            ))}
           </div>
         </div>
 
@@ -255,30 +344,6 @@ export default function LandingScreen() {
         )}
 
         <div style={{ flex: 1 }} />
-
-        {/* ── ORDER CTA ── */}
-        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center' }}>
-          <a
-            href="https://bestpartbowls.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cta-pill"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '11px 28px',
-              background: 'transparent',
-              border: '1.5px solid #E8622A',
-              borderRadius: 50,
-              color: '#E8622A',
-              fontFamily: '"Sarabun", system-ui', fontWeight: 600, fontSize: 14,
-              textDecoration: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-          >
-            ดูเมนูและสั่งอาหาร →
-          </a>
-        </div>
 
         {/* ── SOCIAL PROOF ── */}
         <div style={{ padding: '16px 16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
