@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
 import { MascotBowl } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { supabase } from '../lib/supabase'
 
 const PROBLEM_CATEGORIES = [
@@ -293,7 +294,7 @@ export default function ProblemPath() {
 
           <div style={{ textAlign: 'center' }}>
             <div style={{ display: 'inline-block', animation: 'floatChar 3s ease-in-out infinite' }}>
-              <MascotBowl size={80} mood="bow" />
+              <NumCharacter pose="concerned" size={110} />
             </div>
           </div>
 

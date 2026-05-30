@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotWai, HeartLogo } from '../components/Illustrations'
+import { HeartLogo } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { C } from '../components/SharedUI'
 
 function getTimeGreeting(): { main: string; sub: string } {
@@ -82,7 +83,7 @@ export default function GreetingScreen() {
           }} />
           {/* Floating character */}
           <div style={{ animation: 'gentleFloat 3s ease-in-out infinite', position: 'relative', zIndex: 1 }}>
-            <MascotWai size={160} glow />
+            <NumCharacter pose="greeting" size={140} />
           </div>
         </div>
 

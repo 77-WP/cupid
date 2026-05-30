@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotBowl, HeartLogo } from '../components/Illustrations'
+import { HeartLogo } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
 
@@ -115,7 +116,7 @@ export default function LandingScreen() {
 
         {/* ── CHARACTER + HEADING ── */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 10 }}>
-          <div className="mascot-float"><MascotBowl size={148} mood="happy" wave /></div>
+          <div className="mascot-float"><NumCharacter pose="greeting" size={120} /></div>
           <div style={{ fontFamily: '"Sarabun", system-ui', fontWeight: 700, fontSize: 24, color: C.brown, marginTop: 6, textAlign: 'center', lineHeight: 1.25, padding: '0 28px' }}>
             วันนี้เป็นยังไงบ้างครับ?
           </div>

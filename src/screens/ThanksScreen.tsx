@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotBow } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { C } from '../components/SharedUI'
 import SocialFooter from '../components/SocialFooter'
 import { supabase } from '../lib/supabase'
@@ -412,7 +412,7 @@ export default function ThanksScreen() {
             <span style={{ position: 'absolute', top: -10, right: 6, fontSize: 13, animation: 'sparkleFloat 2.4s ease-in-out 0.3s infinite' }}>✦</span>
             <span style={{ position: 'absolute', bottom: 2, right: -2, fontSize: 10, animation: 'sparkleFloat 1.8s ease-in-out 0.6s infinite' }}>✦</span>
             <div style={{ animation: 'celebrateChar 0.8s ease-out, floatChar 3s ease-in-out 0.8s infinite' }}>
-              <MascotBow size={76} />
+              <NumCharacter pose="celebrating" size={130} />
             </div>
           </div>
 

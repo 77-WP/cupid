@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotBowl } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 
 export default function ProblemClosingScreen() {
   const navigate = useNavigate()
@@ -44,7 +44,7 @@ export default function ProblemClosingScreen() {
         {/* Character with check overlay */}
         <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
           <div style={{ animation: 'floatChar 3s ease-in-out infinite' }}>
-            <MascotBowl size={80} mood="happy" />
+            <NumCharacter pose="promising" size={120} />
           </div>
           <div style={{ position: 'absolute', bottom: -4, right: -4, width: 28, height: 28, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="16" height="16" viewBox="0 0 16 16">

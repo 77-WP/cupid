@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotJump } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { BackBtn, C } from '../components/SharedUI'
 import { supabase } from '../lib/supabase'
 
@@ -132,7 +132,7 @@ export default function HappyPath() {
           {/* A) Character */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
             <div style={{ animation: charAnim }}>
-              <MascotJump size={100} />
+              <NumCharacter pose="happy" size={120} />
             </div>
           </div>
 

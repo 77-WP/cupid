@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileFrame from '../components/MobileFrame'
-import { MascotBowl } from '../components/Illustrations'
+import NumCharacter from '../components/NumCharacter'
 import { supabase } from '../lib/supabase'
 
 const NEUTRAL_HINTS = [
@@ -93,7 +93,7 @@ export default function NeutralPath() {
         {/* Character block */}
         <div style={{ textAlign: 'center', padding: '0 20px' }}>
           <div style={{ animation: 'floatChar 3s ease-in-out infinite', display: 'inline-block' }}>
-            <MascotBowl size={80} />
+            <NumCharacter pose="listening" size={120} />
           </div>
         </div>
 
